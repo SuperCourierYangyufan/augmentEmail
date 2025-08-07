@@ -1,0 +1,37 @@
+spring:
+  # 数据源配置
+  datasource:
+    url: jdbc:mysql://yangyufan.top:3306/augment?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    driver-class-name: com.mysql.jdbc.Driver
+    username: root
+    password: Yang199691
+    initialization-mode: always
+    schema: classpath:schema.sql
+    continue-on-error: true
+
+  # JPA配置
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    database-platform: org.hibernate.dialect.MySQL57Dialect
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.MySQL57Dialect
+      
+# 服务器配置
+server:
+  port: 8081
+  
+# 日志配置
+logging:
+  level:
+    org.my.augment: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+
+# 应用配置
+app:
+  # 超级授权key配置
+  super-auth-key: yangyufan199691
