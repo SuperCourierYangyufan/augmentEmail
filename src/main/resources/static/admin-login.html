@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超级管理员登录 - 公告管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            overflow: hidden;
+        }
+
+        /* 背景动画粒子 */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 0.3; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 0.8; }
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            position: relative;
+            z-index: 10;
+            animation: slideInUp 0.8s ease-out;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-header h1 {
+            color: #4a5568;
+            font-size: 2rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .login-header p {
+            color: #718096;
+            font-size: 1rem;
+        }
+
+        .admin-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #4a5568;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: rgba(255, 255, 255, 1);
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            animation: fadeInDown 0.5s ease-out;
+        }
+
+        .alert-error {
+            background: rgba(254, 226, 226, 0.9);
+            color: #c53030;
+            border: 1px solid rgba(254, 202, 202, 0.5);
+        }
+
+        .alert-success {
+            background: rgba(240, 253, 244, 0.9);
+            color: #38a169;
+            border: 1px solid rgba(154, 230, 180, 0.5);
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .back-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+
+        .back-link a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 480px) {
+            .login-container {
+                margin: 20px;
+                padding: 30px 25px;
+            }
+            
+            .login-header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .admin-icon {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 背景粒子动画 -->
+    <div class="particles" id="particles"></div>
+
+    <div class="login-container">
+        <div class="login-header">
+            <div class="admin-icon">👑</div>
+            <h1>超级管理员</h1>
+            <p>公告管理系统</p>
+        </div>
+
+        <div id="alertContainer"></div>
+
+        <form id="adminLoginForm">
+            <div class="form-group">
+                <label for="authKey">超级授权密钥</label>
+                <input type="password" id="authKey" name="authKey" placeholder="请输入超级授权密钥" required>
+            </div>
+
+            <button type="submit" class="login-btn" id="loginBtn">
+                <span class="loading-spinner" id="loadingSpinner"></span>
+                <span id="btnText">登录管理后台</span>
+            </button>
+        </form>
+
+        <div class="back-link">
+            <a href="/">← 返回首页</a>
+        </div>
+    </div>
+
+    <script>
+        // 创建背景粒子动画
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // 显示提示消息
+        function showAlert(message, type = 'error') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            alertContainer.innerHTML = '';
+            alertContainer.appendChild(alert);
+            
+            // 3秒后自动隐藏
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                setTimeout(() => {
+                    if (alert.parentNode) {
+                        alert.parentNode.removeChild(alert);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // 设置加载状态
+        function setLoading(loading) {
+            const loginBtn = document.getElementById('loginBtn');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            const btnText = document.getElementById('btnText');
+            
+            if (loading) {
+                loginBtn.disabled = true;
+                loadingSpinner.style.display = 'inline-block';
+                btnText.textContent = '登录中...';
+            } else {
+                loginBtn.disabled = false;
+                loadingSpinner.style.display = 'none';
+                btnText.textContent = '登录管理后台';
+            }
+        }
+
+        // 处理登录表单提交
+        document.getElementById('adminLoginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const authKey = document.getElementById('authKey').value.trim();
+            
+            if (!authKey) {
+                showAlert('请输入超级授权密钥');
+                return;
+            }
+            
+            setLoading(true);
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ authKey: authKey })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    // 检查是否为超级管理员
+                    if (data.remainingCount === -1) {
+                        showAlert('登录成功，正在跳转...', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/announcement-admin.html';
+                        }, 1000);
+                    } else {
+                        showAlert('此密钥不是超级管理员密钥，无法访问管理后台');
+                    }
+                } else {
+                    showAlert(data.message || '登录失败，请检查授权密钥');
+                }
+            } catch (error) {
+                console.error('登录请求失败:', error);
+                showAlert('网络错误，请稍后重试');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+            
+            // 自动聚焦到输入框
+            document.getElementById('authKey').focus();
+            
+            // 检查是否已经登录
+            checkLoginStatus();
+        });
+
+        // 检查登录状态
+        async function checkLoginStatus() {
+            try {
+                const response = await fetch('/api/login-status');
+                const data = await response.json();
+                
+                if (data.loggedIn && data.remainingCount === -1) {
+                    // 已经是超级管理员登录状态，直接跳转
+                    window.location.href = '/announcement-admin.html';
+                }
+            } catch (error) {
+                // 忽略检查登录状态的错误
+                console.log('检查登录状态失败:', error);
+            }
+        }
+    </script>
+</body>
+</html>

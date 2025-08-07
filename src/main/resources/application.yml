@@ -19,6 +19,8 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.MySQL57Dialect
+
+
       
 # 服务器配置
 server:
@@ -35,3 +37,5 @@ logging:
 app:
   # 超级授权key配置
   super-auth-key: yangyufan199691
+
+

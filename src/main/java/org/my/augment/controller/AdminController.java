@@ -256,7 +256,7 @@ public class AdminController {
      * @return 生成结果
      */
     @GetMapping("/generate-auth-key")
-    public ResponseEntity<Map<String, Object>> generateAuthKey(@RequestParam(defaultValue = "100") Integer maxCount,
+    public ResponseEntity<String> generateAuthKey(@RequestParam(defaultValue = "100") Integer maxCount,
                                                               @RequestParam(required = false) String description) {
         try {
             // 生成唯一的随机密钥
@@ -290,13 +290,10 @@ public class AdminController {
             logger.info("成功生成随机认证密钥: {}, 最大使用次数: {}, 过期时间: {}",
                        randomAuthKey, maxCount, savedAuthKey.getExpireTime());
 
-            return ResponseEntity.ok(result);
+            return ResponseEntity.ok(savedAuthKey.getAuthKey());
 
         } catch (Exception e) {
-            logger.error("生成随机认证密钥时发生异常: {}", e.getMessage(), e);
-            Map<String, Object> errorMap = new HashMap<>();
-            errorMap.put("error", "生成失败: " + e.getMessage());
-            return ResponseEntity.status(500).body(errorMap);
+            return ResponseEntity.status(500).body("生成失败: " + e.getMessage());
         }
     }
 

@@ -21,15 +21,20 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('临时邮箱管理系统初始化...');
 
     // 检查登录状态
-    checkLoginStatus().then(isLoggedIn => {
-        if (isLoggedIn) {
+    checkLoginStatus().then(loginInfo => {
+        if (loginInfo.isLoggedIn) {
             loadEmailStatistics();
             loadEmailList();
+            loadAnnouncements(); // 加载公告
+
+            // 检查是否为超级管理员，显示公告管理按钮
+            checkSuperAdminStatus();
 
             // 设置定时刷新（每30秒）
             setInterval(function() {
                 loadEmailStatistics();
                 loadEmailList();
+                loadAnnouncements(); // 定时刷新公告
             }, 30000);
         } else {
             // 未登录，重定向到登录页面
@@ -778,7 +783,7 @@ document.head.appendChild(style);
 
 /**
  * 检查用户登录状态
- * @returns {Promise<boolean>} 是否已登录
+ * @returns {Promise<Object>} 登录状态信息
  */
 async function checkLoginStatus() {
     try {
@@ -788,16 +793,28 @@ async function checkLoginStatus() {
         if (result.loggedIn) {
             // 显示用户信息
             showUserInfo(result);
-            return true;
+            return {
+                isLoggedIn: true,
+                remainingCount: result.remainingCount,
+                isSuperAdmin: result.remainingCount === -1
+            };
         } else {
             // 隐藏用户信息
             hideUserInfo();
-            return false;
+            return {
+                isLoggedIn: false,
+                remainingCount: 0,
+                isSuperAdmin: false
+            };
         }
     } catch (error) {
         console.error('检查登录状态失败:', error);
         hideUserInfo();
-        return false;
+        return {
+            isLoggedIn: false,
+            remainingCount: 0,
+            isSuperAdmin: false
+        };
     }
 }
 
@@ -896,4 +913,226 @@ function handleUnauthorizedResponse(response) {
         return true;
     }
     return false;
+}
+
+// ==================== 公告相关功能 ====================
+
+/**
+ * 加载公告列表
+ */
+async function loadAnnouncements() {
+    try {
+        const response = await fetch('/api/announcements/sidebar');
+
+        if (response.ok) {
+            const data = await response.json();
+            renderAnnouncements(data.announcements || []);
+        } else {
+            console.warn('加载公告失败:', response.status);
+            renderAnnouncements([]);
+        }
+    } catch (error) {
+        console.error('加载公告失败:', error);
+        renderAnnouncements([]);
+    }
+}
+
+/**
+ * 渲染公告列表
+ */
+function renderAnnouncements(announcements) {
+    const container = document.getElementById('announcementsContent');
+
+    if (!announcements || announcements.length === 0) {
+        container.innerHTML = `
+            <div class="no-announcements">
+                <div class="no-announcements-icon">📭</div>
+                <div>暂无公告</div>
+            </div>
+        `;
+        return;
+    }
+
+    const announcementsHTML = announcements.map(announcement => `
+        <div class="announcement-item ${announcement.isPinned ? 'pinned' : ''}"
+             onclick="showAnnouncementDetail(${announcement.id})">
+            <div class="announcement-title">${escapeHtml(announcement.title)}</div>
+            <div class="announcement-meta">
+                <span class="announcement-type ${announcement.type.toLowerCase()}">${getTypeLabel(announcement.type)}</span>
+                <span class="announcement-date">${formatDate(announcement.createTime)}</span>
+            </div>
+        </div>
+    `).join('');
+
+    container.innerHTML = announcementsHTML;
+}
+
+/**
+ * 切换公告展开/收起状态
+ */
+function toggleAnnouncements() {
+    const content = document.getElementById('announcementsContent');
+    const toggle = document.getElementById('announcementsToggle');
+
+    if (content.classList.contains('collapsed')) {
+        content.classList.remove('collapsed');
+        toggle.classList.remove('collapsed');
+        toggle.textContent = '🔽';
+    } else {
+        content.classList.add('collapsed');
+        toggle.classList.add('collapsed');
+        toggle.textContent = '▶️';
+    }
+}
+
+/**
+ * 显示公告详情
+ */
+async function showAnnouncementDetail(announcementId) {
+    try {
+        const response = await fetch(`/api/announcements/${announcementId}`);
+
+        if (response.ok) {
+            const data = await response.json();
+            const announcement = data.announcement;
+
+            // 填充模态框内容
+            document.getElementById('announcementModalTitle').textContent = announcement.title;
+            document.getElementById('announcementModalType').textContent = getTypeLabel(announcement.type);
+            document.getElementById('announcementModalType').className = `announcement-type ${announcement.type.toLowerCase()}`;
+            document.getElementById('announcementModalDate').textContent = formatDateTime(announcement.createTime);
+            document.getElementById('announcementModalContent').innerHTML = announcement.content;
+
+            // 显示模态框
+            document.getElementById('announcementModal').style.display = 'block';
+        } else {
+            showNotification('加载公告详情失败', 'error');
+        }
+    } catch (error) {
+        console.error('加载公告详情失败:', error);
+        showNotification('加载公告详情失败', 'error');
+    }
+}
+
+/**
+ * 关闭公告详情模态框
+ */
+function closeAnnouncementModal() {
+    document.getElementById('announcementModal').style.display = 'none';
+}
+
+/**
+ * 获取公告类型标签
+ */
+function getTypeLabel(type) {
+    const typeLabels = {
+        'GENERAL': '普通公告',
+        'IMPORTANT': '重要通知',
+        'MAINTENANCE': '系统维护',
+        'UPDATE': '功能更新'
+    };
+    return typeLabels[type] || type;
+}
+
+/**
+ * 格式化日期（简短格式）
+ */
+function formatDate(dateTimeStr) {
+    if (!dateTimeStr) return '';
+    const date = new Date(dateTimeStr);
+    const now = new Date();
+    const diffTime = now - date;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+        return '今天';
+    } else if (diffDays === 1) {
+        return '昨天';
+    } else if (diffDays < 7) {
+        return `${diffDays}天前`;
+    } else {
+        return date.toLocaleDateString('zh-CN', {
+            month: '2-digit',
+            day: '2-digit'
+        });
+    }
+}
+
+/**
+ * 格式化日期时间（完整格式）
+ */
+function formatDateTime(dateTimeStr) {
+    if (!dateTimeStr) return '';
+    const date = new Date(dateTimeStr);
+    return date.toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+/**
+ * HTML转义
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// 点击模态框外部关闭
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('announcementModal');
+    if (event.target === modal) {
+        closeAnnouncementModal();
+    }
+});
+
+// ==================== 超级管理员功能 ====================
+
+/**
+ * 检查超级管理员状态并显示公告管理按钮
+ */
+async function checkSuperAdminStatus() {
+    try {
+        const response = await fetch('/api/login-status');
+        const result = await response.json();
+
+        if (result.loggedIn && result.remainingCount === -1) {
+            // 是超级管理员，显示公告管理按钮
+            const announcementBtn = document.getElementById('announcementManageBtn');
+            if (announcementBtn) {
+                announcementBtn.style.display = 'inline-flex';
+            }
+        } else {
+            // 不是超级管理员，隐藏公告管理按钮
+            const announcementBtn = document.getElementById('announcementManageBtn');
+            if (announcementBtn) {
+                announcementBtn.style.display = 'none';
+            }
+        }
+    } catch (error) {
+        console.error('检查超级管理员状态失败:', error);
+        // 出错时隐藏按钮
+        const announcementBtn = document.getElementById('announcementManageBtn');
+        if (announcementBtn) {
+            announcementBtn.style.display = 'none';
+        }
+    }
+}
+
+/**
+ * 跳转到公告管理页面
+ */
+function goToAnnouncementManage() {
+    // 先验证超级管理员权限
+    checkSuperAdminStatus().then(() => {
+        // 跳转到公告管理页面
+        window.location.href = '/announcement-admin.html';
+    }).catch(error => {
+        console.error('权限验证失败:', error);
+        showNotification('权限验证失败，无法访问公告管理', 'error');
+    });
 }

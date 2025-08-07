@@ -57,4 +57,26 @@ public class PageController {
             return "redirect:/login";
         }
     }
+
+    /**
+     * 公告管理页面
+     * 需要超级管理员权限，由拦截器控制
+     *
+     * @return 重定向到静态页面
+     */
+    @GetMapping("/announcement-admin")
+    public String announcementAdmin() {
+        return "redirect:/announcement-admin.html";
+    }
+
+    /**
+     * 公告编辑页面
+     * 需要超级管理员权限，由拦截器控制
+     *
+     * @return 重定向到静态页面
+     */
+    @GetMapping("/announcement-edit")
+    public String announcementEdit() {
+        return "redirect:/announcement-edit.html";
+    }
 }

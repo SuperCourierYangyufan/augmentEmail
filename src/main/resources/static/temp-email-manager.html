@@ -24,6 +24,23 @@
             padding: 15px;
         }
 
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .content-area {
+            min-width: 0;
+        }
+
+        .sidebar {
+            position: sticky;
+            top: 20px;
+            height: fit-content;
+        }
+
         .header {
             text-align: center;
             margin-bottom: 20px;
@@ -95,6 +112,17 @@
         .btn-success:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(81, 207, 102, 0.6);
+        }
+
+        .btn-admin {
+            background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(159, 122, 234, 0.4);
+        }
+
+        .btn-admin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(159, 122, 234, 0.6);
         }
 
         .btn-warning {
@@ -849,6 +877,264 @@
                 font-size: 13px;
                 line-height: 1.3;
             }
+
+            .main-layout {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .sidebar {
+                position: static;
+                order: -1;
+            }
+        }
+
+        /* 公告侧边栏样式 */
+        .announcements-sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(79, 70, 229, 0.1);
+            border: 1px solid rgba(79, 70, 229, 0.2);
+            animation: slideInRight 0.8s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .announcements-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .announcements-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: #667eea;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-btn.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .announcements-content {
+            max-height: 600px;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        .announcements-content.collapsed {
+            max-height: 0;
+            overflow: hidden;
+        }
+
+        .announcement-item {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .announcement-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .announcement-item.pinned {
+            border-left-color: #f59e0b;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        }
+
+        .announcement-item.pinned::before {
+            content: "📌";
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.8rem;
+        }
+
+        .announcement-item {
+            position: relative;
+        }
+
+        .announcement-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .announcement-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.7rem;
+            color: #6b7280;
+        }
+
+        .announcement-type {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.6rem;
+            font-weight: 600;
+        }
+
+        .announcement-type.important {
+            background: #ef4444;
+        }
+
+        .announcement-type.maintenance {
+            background: #f59e0b;
+        }
+
+        .announcement-type.update {
+            background: #10b981;
+        }
+
+        .announcement-date {
+            font-size: 0.6rem;
+        }
+
+        .no-announcements {
+            text-align: center;
+            color: #9ca3af;
+            font-size: 0.9rem;
+            padding: 30px 15px;
+        }
+
+        .no-announcements-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+
+        /* 公告详情模态框 */
+        .announcement-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .announcement-modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .announcement-modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .announcement-modal-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.3;
+        }
+
+        .announcement-modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+
+        .announcement-modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .announcement-modal-body {
+            padding: 25px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .announcement-modal-content-text {
+            line-height: 1.6;
+            color: #374151;
+            font-size: 1rem;
+        }
+
+        .announcement-modal-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e5e7eb;
         }
     </style>
 </head>
@@ -893,21 +1179,48 @@
                 <button class="btn btn-success" onclick="refreshEmailList()">
                     🔄 刷新列表
                 </button>
+                <!-- 超级管理员公告管理按钮 -->
+                <button class="btn btn-admin" id="announcementManageBtn" onclick="goToAnnouncementManage()" style="display: none;">
+                    📢 公告管理
+                </button>
             </div>
         </div>
 
-        <div class="email-list">
-            <div class="email-list-header">
-                📧 邮箱列表 (按生成时间排序)
-            </div>
-            <div id="emailListContent">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    正在加载邮箱列表...
+        <div class="main-layout">
+            <div class="content-area">
+                <div class="email-list">
+                    <div class="email-list-header">
+                        📧 邮箱列表 (按生成时间排序)
+                    </div>
+                    <div id="emailListContent">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            正在加载邮箱列表...
+                        </div>
+                    </div>
+                    <div id="pagination" class="pagination">
+                        <!-- 分页组件将通过JavaScript动态加载 -->
+                    </div>
                 </div>
             </div>
-            <div id="pagination" class="pagination">
-                <!-- 分页组件将通过JavaScript动态加载 -->
+
+            <div class="sidebar">
+                <div class="announcements-sidebar">
+                    <div class="announcements-header">
+                        <div class="announcements-title">
+                            📢 系统公告
+                        </div>
+                        <button class="toggle-btn" id="announcementsToggle" onclick="toggleAnnouncements()">
+                            🔽
+                        </button>
+                    </div>
+                    <div class="announcements-content" id="announcementsContent">
+                        <div class="loading" style="text-align: center; padding: 20px; color: #9ca3af;">
+                            <div class="spinner" style="width: 20px; height: 20px; margin: 0 auto 10px;"></div>
+                            加载中...
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -931,6 +1244,25 @@
             </div>
             <div class="modal-actions">
                 <button class="btn" onclick="hideVerificationModal()" style="background: #e9ecef; color: #666;">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 公告详情模态框 -->
+    <div id="announcementModal" class="announcement-modal">
+        <div class="announcement-modal-content">
+            <div class="announcement-modal-header">
+                <h2 class="announcement-modal-title" id="announcementModalTitle">公告标题</h2>
+                <button class="announcement-modal-close" onclick="closeAnnouncementModal()">×</button>
+            </div>
+            <div class="announcement-modal-body">
+                <div class="announcement-modal-meta">
+                    <span class="announcement-type" id="announcementModalType">普通公告</span>
+                    <span class="announcement-date" id="announcementModalDate">2025-08-07</span>
+                </div>
+                <div class="announcement-modal-content-text" id="announcementModalContent">
+                    公告内容加载中...
+                </div>
             </div>
         </div>
     </div>
