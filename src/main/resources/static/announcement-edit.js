@@ -9,13 +9,13 @@
 let isEditMode = false;
 let currentAnnouncementId = null;
 
-let tinymceEditor = null;
+let quillEditor = null;
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', function() {
     checkAdminAuth();
     initializePage();
-    initializeTinyMCE();
+    initializeQuillEditor();
 
     setupEventListeners();
 });
@@ -57,32 +57,40 @@ function initializePage() {
 }
 
 /**
- * 初始化TinyMCE富文本编辑器
+ * 初始化Quill富文本编辑器
  */
-function initializeTinyMCE() {
-    tinymce.init({
-        selector: '#content',
-        height: 400,
-        language: 'zh_CN',
-        api_key: 'p8zrol7nvr2zvlacfqeovn3gpyskfkrz3xz38ld17hn1kifl',
-        plugins: [
-            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-            'insertdatetime', 'media', 'table', 'help', 'wordcount'
-        ],
-        toolbar: 'undo redo | blocks | bold italic forecolor backcolor | ' +
-                'alignleft aligncenter alignright alignjustify | ' +
-                'bullist numlist outdent indent | removeformat | help',
-        content_style: 'body { font-family: -apple-system, BlinkMacSystemFont, San Francisco, Segoe UI, Roboto, Helvetica Neue, sans-serif; font-size: 14px; }',
-        branding: false,
-        menubar: false,
-        statusbar: false,
-        setup: function(editor) {
-            tinymceEditor = editor;
-            editor.on('change', function() {
-                editor.save();
-            });
+function initializeQuillEditor() {
+    // 配置工具栏
+    const toolbarOptions = [
+        ['bold', 'italic', 'underline', 'strike'],        // 文本格式
+        ['blockquote', 'code-block'],                     // 引用和代码块
+        [{ 'header': 1 }, { 'header': 2 }],               // 标题
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],     // 列表
+        [{ 'script': 'sub'}, { 'script': 'super' }],      // 上标/下标
+        [{ 'indent': '-1'}, { 'indent': '+1' }],          // 缩进
+        [{ 'direction': 'rtl' }],                         // 文本方向
+        [{ 'size': ['small', false, 'large', 'huge'] }],  // 字体大小
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],        // 标题级别
+        [{ 'color': [] }, { 'background': [] }],          // 字体颜色和背景色
+        [{ 'font': [] }],                                 // 字体
+        [{ 'align': [] }],                                // 对齐方式
+        ['clean'],                                        // 清除格式
+        ['link', 'image']                                 // 链接和图片
+    ];
+
+    // 初始化Quill编辑器
+    quillEditor = new Quill('#content', {
+        theme: 'snow',
+        placeholder: '请输入公告内容...',
+        modules: {
+            toolbar: toolbarOptions
         }
+    });
+
+    // 监听内容变化，同步到隐藏字段
+    quillEditor.on('text-change', function() {
+        const content = quillEditor.root.innerHTML;
+        document.getElementById('contentHidden').value = content;
     });
 }
 
@@ -122,10 +130,11 @@ async function loadAnnouncementData(id) {
             document.getElementById('isVisible').checked = announcement.isVisible !== false;
             document.getElementById('isPinned').checked = announcement.isPinned === true;
             
-            // 等待TinyMCE初始化完成后设置内容
+            // 等待Quill编辑器初始化完成后设置内容
             const checkEditor = setInterval(() => {
-                if (tinymceEditor) {
-                    tinymceEditor.setContent(announcement.content || '');
+                if (quillEditor) {
+                    quillEditor.root.innerHTML = announcement.content || '';
+                    document.getElementById('contentHidden').value = announcement.content || '';
                     clearInterval(checkEditor);
                 }
             }, 100);
@@ -162,12 +171,20 @@ async function saveAnnouncement() {
         // 准备公告数据
         const announcementData = {
             title: document.getElementById('title').value.trim(),
-            content: tinymceEditor.getContent(),
+            content: quillEditor.root.innerHTML,
             type: document.getElementById('type').value,
             isVisible: document.getElementById('isVisible').checked,
-            isPinned: document.getElementById('isPinned').checked,
-
+            isPinned: document.getElementById('isPinned').checked
         };
+
+        // 调试信息
+        console.log('准备发送的公告数据:', {
+            title: announcementData.title,
+            contentLength: announcementData.content.length,
+            type: announcementData.type,
+            isVisible: announcementData.isVisible,
+            isPinned: announcementData.isPinned
+        });
         
         // 发送保存请求
         const url = isEditMode ? `/api/announcements/${currentAnnouncementId}` : '/api/announcements';
@@ -207,20 +224,34 @@ async function saveAnnouncement() {
  */
 function validateForm() {
     const title = document.getElementById('title').value.trim();
-    const content = tinymceEditor.getContent().trim();
-    
+    const content = quillEditor.getText().trim();
+    const htmlContent = quillEditor.root.innerHTML;
+
     if (!title) {
         showMessage('请输入公告标题', 'error');
         document.getElementById('title').focus();
         return false;
     }
-    
-    if (!content) {
-        showMessage('请输入公告内容', 'error');
-        tinymceEditor.focus();
+
+    if (title.length > 200) {
+        showMessage('公告标题不能超过200个字符', 'error');
+        document.getElementById('title').focus();
         return false;
     }
-    
+
+    if (!content) {
+        showMessage('请输入公告内容', 'error');
+        quillEditor.focus();
+        return false;
+    }
+
+    // 检查HTML内容长度（防止数据库字段溢出）
+    if (htmlContent.length > 65535) {
+        showMessage('公告内容过长，请适当缩减内容', 'error');
+        quillEditor.focus();
+        return false;
+    }
+
     return true;
 }
 
@@ -229,16 +260,16 @@ function validateForm() {
  */
 function previewAnnouncement() {
     const title = document.getElementById('title').value.trim();
-    const content = tinymceEditor.getContent();
-    
-    if (!title || !content) {
+    const content = quillEditor.root.innerHTML;
+
+    if (!title || !quillEditor.getText().trim()) {
         showMessage('请先填写标题和内容', 'error');
         return;
     }
-    
+
     // 创建预览窗口
     const previewWindow = window.open('', '_blank', 'width=800,height=600');
-    previewWindow.document.write(`
+    const previewContent = `
         <!DOCTYPE html>
         <html>
         <head>
@@ -254,7 +285,8 @@ function previewAnnouncement() {
             <div class="content">${content}</div>
         </body>
         </html>
-    `);
+    `;
+    previewWindow.document.write(previewContent);
     previewWindow.document.close();
 }
 

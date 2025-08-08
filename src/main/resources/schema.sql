@@ -36,6 +36,20 @@ CREATE TABLE IF NOT EXISTS temp_emails (
     auth_key VARCHAR(64) NOT NULL COMMENT '授权密钥（用于数据隔离）'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='临时邮箱管理表';
 
+-- 公告管理表
+CREATE TABLE IF NOT EXISTS announcements (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    title VARCHAR(200) NOT NULL COMMENT '公告标题',
+    content TEXT NOT NULL COMMENT '公告内容（富文本）',
+    is_visible BOOLEAN NOT NULL DEFAULT TRUE COMMENT '是否显示（true-显示，false-隐藏）',
+    is_pinned BOOLEAN NOT NULL DEFAULT FALSE COMMENT '是否置顶（true-置顶，false-普通）',
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time TIMESTAMP NULL COMMENT '更新时间',
+    creator VARCHAR(100) COMMENT '创建者（超级管理员标识）',
+    sort_weight INT NOT NULL DEFAULT 0 COMMENT '排序权重（数值越大越靠前）',
+    type VARCHAR(20) NOT NULL DEFAULT 'GENERAL' COMMENT '公告类型：GENERAL-普通公告, IMPORTANT-重要通知, MAINTENANCE-系统维护, UPDATE-功能更新'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='公告管理表';
+
 -- 创建索引（MySQL 5.7兼容语法）
 -- 注意：auth_key字段已经是UNIQUE，自动有索引，无需重复创建
 -- CREATE INDEX idx_auth_keys_key ON auth_keys(auth_key);
@@ -50,3 +64,11 @@ CREATE INDEX idx_temp_emails_expire_time ON temp_emails(expire_time);
 CREATE INDEX idx_temp_emails_create_time ON temp_emails(create_time);
 CREATE INDEX idx_temp_emails_auth_key ON temp_emails(auth_key);
 CREATE INDEX idx_temp_emails_auth_key_status ON temp_emails(auth_key, status);
+
+-- 公告表索引
+CREATE INDEX idx_announcements_visible ON announcements(is_visible);
+CREATE INDEX idx_announcements_pinned ON announcements(is_pinned);
+CREATE INDEX idx_announcements_create_time ON announcements(create_time);
+CREATE INDEX idx_announcements_sort_weight ON announcements(sort_weight);
+CREATE INDEX idx_announcements_type ON announcements(type);
+CREATE INDEX idx_announcements_visible_pinned_weight ON announcements(is_visible, is_pinned, sort_weight);
