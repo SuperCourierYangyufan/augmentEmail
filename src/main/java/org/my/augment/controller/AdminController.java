@@ -1,5 +1,11 @@
 package org.my.augment.controller;
 
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.my.augment.entity.AuthKey;
 import org.my.augment.entity.EmailLog;
 import org.my.augment.repository.AuthKeyRepository;
@@ -9,15 +15,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-import java.security.SecureRandom;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 管理控制器
@@ -106,23 +110,23 @@ public class AdminController {
             return ResponseEntity.status(500).build();
         }
     }
-
-    /**
-     * 获取所有认证密钥列表
-     * 
-     * @return 认证密钥列表
-     */
-    @GetMapping("/auth-keys")
-    public ResponseEntity<List<AuthKey>> getAllAuthKeys() {
-        try {
-            List<AuthKey> authKeys = authKeyRepository.findAll();
-            return ResponseEntity.ok(authKeys);
-            
-        } catch (Exception e) {
-            logger.error("查询所有认证密钥时发生异常: {}", e.getMessage(), e);
-            return ResponseEntity.status(500).build();
-        }
-    }
+//
+//    /**
+//     * 获取所有认证密钥列表
+//     *
+//     * @return 认证密钥列表
+//     */
+//    @GetMapping("/auth-keys")
+//    public ResponseEntity<List<AuthKey>> getAllAuthKeys() {
+//        try {
+//            List<AuthKey> authKeys = authKeyRepository.findAll();
+//            return ResponseEntity.ok(authKeys);
+//
+//        } catch (Exception e) {
+//            logger.error("查询所有认证密钥时发生异常: {}", e.getMessage(), e);
+//            return ResponseEntity.status(500).build();
+//        }
+//    }
 
     /**
      * 创建新的认证密钥

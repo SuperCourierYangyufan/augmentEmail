@@ -278,6 +278,16 @@ public class TempEmailService {
     }
 
     /**
+     * 根据邮箱ID查找邮箱记录
+     *
+     * @param emailId 邮箱ID
+     * @return 邮箱记录，如果不存在返回空
+     */
+    public Optional<TempEmail> findById(Long emailId) {
+        return tempEmailRepository.findById(emailId);
+    }
+
+    /**
      * 封禁指定的邮箱
      * 
      * @param emailId 邮箱ID

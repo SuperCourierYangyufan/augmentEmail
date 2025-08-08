@@ -2,6 +2,7 @@ package org.my.augment.controller;
 
 import org.my.augment.entity.TempEmail;
 import org.my.augment.entity.AuthKey;
+import org.my.augment.entity.EmailLog;
 import org.my.augment.service.TempEmailService;
 import org.my.augment.service.EmailService;
 import org.my.augment.service.AuthService;
@@ -103,10 +104,17 @@ public class TempEmailController {
      */
     @PostMapping("/generate")
     public ResponseEntity<Map<String, Object>> generateNewEmail(HttpServletRequest request) {
+        long startTime = System.currentTimeMillis();
+
         try {
             // 获取当前用户的授权key
             String authKey = LoginController.getCurrentAuthKey(request);
             if (authKey == null) {
+                // 记录新增邮箱失败日志
+                authService.logEmailOperation("", EmailLog.OperationType.ADD_EMAIL,
+                                            null, EmailLog.OperationResult.FAILED,
+                                            "用户未登录或会话已过期", request, System.currentTimeMillis() - startTime);
+
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("success", false);
                 errorResponse.put("message", "用户未登录或会话已过期");
@@ -118,6 +126,11 @@ public class TempEmailController {
             // 先获取当前用户信息，用于计算更新后的剩余次数
             AuthService.AuthValidationResult currentValidationResult = authService.validateAuthKeyForLogin(authKey);
             if (!currentValidationResult.isSuccess()) {
+                // 记录新增邮箱失败日志
+                authService.logEmailOperation(authKey, EmailLog.OperationType.ADD_EMAIL,
+                                            null, EmailLog.OperationResult.FAILED,
+                                            "认证密钥验证失败: " + currentValidationResult.getMessage(), request, System.currentTimeMillis() - startTime);
+
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("success", false);
                 errorResponse.put("message", "认证密钥验证失败: " + currentValidationResult.getMessage());
@@ -128,6 +141,11 @@ public class TempEmailController {
             String generatedEmail = generateTempEmailFromAugmentController(authKey, request);
 
             if (generatedEmail == null) {
+                // 记录新增邮箱失败日志
+                authService.logEmailOperation(authKey, EmailLog.OperationType.ADD_EMAIL,
+                                            null, EmailLog.OperationResult.FAILED,
+                                            "生成邮箱失败", request, System.currentTimeMillis() - startTime);
+
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("success", false);
                 errorResponse.put("message", "生成邮箱失败");
@@ -136,6 +154,11 @@ public class TempEmailController {
 
             // 自动将生成的邮箱加入邮箱库
             TempEmail tempEmail = tempEmailService.createTempEmail(generatedEmail, null, authKey);
+
+            // 记录新增邮箱成功日志
+            authService.logEmailOperation(authKey, EmailLog.OperationType.ADD_EMAIL,
+                                        generatedEmail, EmailLog.OperationResult.SUCCESS,
+                                        null, request, System.currentTimeMillis() - startTime);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -160,6 +183,12 @@ public class TempEmailController {
         } catch (IllegalArgumentException e) {
             logger.warn("生成邮箱失败: {}", e.getMessage());
 
+            // 记录新增邮箱失败日志
+            String authKey = LoginController.getCurrentAuthKey(request);
+            authService.logEmailOperation(authKey != null ? authKey : "", EmailLog.OperationType.ADD_EMAIL,
+                                        null, EmailLog.OperationResult.FAILED,
+                                        e.getMessage(), request, System.currentTimeMillis() - startTime);
+
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
             errorResponse.put("message", e.getMessage());
@@ -168,6 +197,12 @@ public class TempEmailController {
 
         } catch (Exception e) {
             logger.error("生成邮箱失败: {}", e.getMessage(), e);
+
+            // 记录新增邮箱异常日志
+            String authKey = LoginController.getCurrentAuthKey(request);
+            authService.logEmailOperation(authKey != null ? authKey : "", EmailLog.OperationType.ADD_EMAIL,
+                                        null, EmailLog.OperationResult.FAILED,
+                                        "生成邮箱失败: " + e.getMessage(), request, System.currentTimeMillis() - startTime);
 
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
@@ -238,12 +273,33 @@ public class TempEmailController {
      * 封禁邮箱
      *
      * @param emailId 邮箱ID
+     * @param request HTTP请求对象
      * @return 封禁结果
      */
     @PostMapping("/ban/{emailId}")
-    public ResponseEntity<Map<String, Object>> banEmail(@PathVariable Long emailId) {
+    public ResponseEntity<Map<String, Object>> banEmail(@PathVariable Long emailId, HttpServletRequest request) {
+        long startTime = System.currentTimeMillis();
+
         try {
-            logger.info("封禁邮箱请求，ID: {}", emailId);
+            // 获取当前用户的授权key
+            String authKey = LoginController.getCurrentAuthKey(request);
+            if (authKey == null) {
+                // 记录封禁邮箱失败日志
+                authService.logEmailOperation("", EmailLog.OperationType.BAN_EMAIL,
+                                            null, EmailLog.OperationResult.FAILED,
+                                            "用户未登录或会话已过期", request, System.currentTimeMillis() - startTime);
+
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "用户未登录或会话已过期");
+                return ResponseEntity.status(401).body(errorResponse);
+            }
+
+            logger.info("封禁邮箱请求，ID: {}, 授权key: {}", emailId, authKey);
+
+            // 先获取邮箱信息用于日志记录
+            Optional<TempEmail> tempEmailOpt = tempEmailService.findById(emailId);
+            String emailAddress = tempEmailOpt.map(TempEmail::getEmailAddress).orElse(null);
 
             boolean success = tempEmailService.banEmail(emailId);
 
@@ -251,16 +307,32 @@ public class TempEmailController {
             response.put("success", success);
 
             if (success) {
+                // 记录封禁邮箱成功日志
+                authService.logEmailOperation(authKey, EmailLog.OperationType.BAN_EMAIL,
+                                            emailAddress, EmailLog.OperationResult.SUCCESS,
+                                            null, request, System.currentTimeMillis() - startTime);
+
                 response.put("message", "邮箱封禁成功");
-                logger.info("成功封禁邮箱，ID: {}", emailId);
+                logger.info("成功封禁邮箱，ID: {}, 邮箱: {}", emailId, emailAddress);
                 return ResponseEntity.ok(response);
             } else {
+                // 记录封禁邮箱失败日志
+                authService.logEmailOperation(authKey, EmailLog.OperationType.BAN_EMAIL,
+                                            emailAddress, EmailLog.OperationResult.FAILED,
+                                            "邮箱不存在或已是封禁状态", request, System.currentTimeMillis() - startTime);
+
                 response.put("message", "邮箱封禁失败，邮箱不存在或已是封禁状态");
                 return ResponseEntity.badRequest().body(response);
             }
 
         } catch (Exception e) {
             logger.error("封禁邮箱失败: {}", e.getMessage(), e);
+
+            // 记录封禁邮箱异常日志
+            String authKey = LoginController.getCurrentAuthKey(request);
+            authService.logEmailOperation(authKey != null ? authKey : "", EmailLog.OperationType.BAN_EMAIL,
+                                        null, EmailLog.OperationResult.FAILED,
+                                        "封禁邮箱失败: " + e.getMessage(), request, System.currentTimeMillis() - startTime);
 
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
@@ -344,10 +416,17 @@ public class TempEmailController {
     @PostMapping("/delete-all-emails")
     public ResponseEntity<Map<String, Object>> deleteAllEmails(@RequestParam String emailAddress,
                                                               HttpServletRequest request) {
+        long startTime = System.currentTimeMillis();
+
         try {
             // 获取当前用户的授权key
             String authKey = LoginController.getCurrentAuthKey(request);
             if (authKey == null) {
+                // 记录删除所有邮件失败日志
+                authService.logEmailOperation("", EmailLog.OperationType.DELETE_ALL_EMAILS,
+                                            emailAddress, EmailLog.OperationResult.FAILED,
+                                            "用户未登录或会话已过期", request, System.currentTimeMillis() - startTime);
+
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("success", false);
                 errorResponse.put("message", "用户未登录或会话已过期");
@@ -359,6 +438,11 @@ public class TempEmailController {
             // 对于临时邮箱库中的邮箱，检查是否有效
             Optional<TempEmail> tempEmailOpt = tempEmailService.findByEmailAddress(emailAddress, authKey);
             if (tempEmailOpt.isPresent() && !tempEmailService.isEmailValid(emailAddress, authKey)) {
+                // 记录删除所有邮件失败日志
+                authService.logEmailOperation(authKey, EmailLog.OperationType.DELETE_ALL_EMAILS,
+                                            emailAddress, EmailLog.OperationResult.FAILED,
+                                            "邮箱已过期或已封禁", request, System.currentTimeMillis() - startTime);
+
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("success", false);
                 errorResponse.put("message", "邮箱已过期或已封禁");
@@ -371,6 +455,11 @@ public class TempEmailController {
             Map<String, Object> response = new HashMap<>();
 
             if (deletedCount >= 0) {
+                // 记录删除所有邮件成功日志
+                authService.logEmailOperation(authKey, EmailLog.OperationType.DELETE_ALL_EMAILS,
+                                            emailAddress, EmailLog.OperationResult.SUCCESS,
+                                            String.format("成功删除 %d 封邮件", deletedCount), request, System.currentTimeMillis() - startTime);
+
                 response.put("success", true);
                 response.put("deletedCount", deletedCount);
                 response.put("message", deletedCount > 0
@@ -380,6 +469,11 @@ public class TempEmailController {
                 logger.info("成功删除邮箱 {} 的 {} 封邮件", emailAddress, deletedCount);
                 return ResponseEntity.ok(response);
             } else {
+                // 记录删除所有邮件失败日志
+                authService.logEmailOperation(authKey, EmailLog.OperationType.DELETE_ALL_EMAILS,
+                                            emailAddress, EmailLog.OperationResult.FAILED,
+                                            "删除邮件失败，请稍后重试", request, System.currentTimeMillis() - startTime);
+
                 response.put("success", false);
                 response.put("message", "删除邮件失败，请稍后重试");
 
@@ -389,6 +483,12 @@ public class TempEmailController {
 
         } catch (Exception e) {
             logger.error("删除邮件失败: {}", e.getMessage(), e);
+
+            // 记录删除所有邮件异常日志
+            String authKey = LoginController.getCurrentAuthKey(request);
+            authService.logEmailOperation(authKey != null ? authKey : "", EmailLog.OperationType.DELETE_ALL_EMAILS,
+                                        emailAddress, EmailLog.OperationResult.FAILED,
+                                        "删除邮件失败: " + e.getMessage(), request, System.currentTimeMillis() - startTime);
 
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);

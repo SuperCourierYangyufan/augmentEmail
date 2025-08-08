@@ -91,7 +91,12 @@ public class EmailLog {
      */
     public enum OperationType {
         GENERATE_EMAIL("生成邮箱"),
-        GET_VERIFICATION("获取验证码");
+        GET_VERIFICATION("获取验证码"),
+        LOGIN("登录"),
+        LOGOUT("退出"),
+        ADD_EMAIL("新增邮箱"),
+        DELETE_ALL_EMAILS("删除所有邮件"),
+        BAN_EMAIL("封禁邮箱");
 
         private final String description;
 

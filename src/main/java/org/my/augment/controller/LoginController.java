@@ -1,6 +1,7 @@
 package org.my.augment.controller;
 
 import org.my.augment.entity.AuthKey;
+import org.my.augment.entity.EmailLog;
 import org.my.augment.service.AuthService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,14 +49,20 @@ public class LoginController {
      * @return 登录结果
      */
     @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest loginRequest, 
+    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest loginRequest,
                                                     HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
-        
+        long startTime = System.currentTimeMillis();
+
         try {
             String authKey = loginRequest.getAuthKey();
-            
+
             if (authKey == null || authKey.trim().isEmpty()) {
+                // 记录登录失败日志
+                authService.logEmailOperation("", EmailLog.OperationType.LOGIN,
+                                            null, EmailLog.OperationResult.FAILED,
+                                            "认证密钥不能为空", request, System.currentTimeMillis() - startTime);
+
                 response.put("success", false);
                 response.put("message", "认证密钥不能为空");
                 return ResponseEntity.badRequest().body(response);
@@ -65,9 +72,15 @@ public class LoginController {
 
             // 验证认证密钥（登录时不检查使用次数限制）
             AuthService.AuthValidationResult validationResult = authService.validateAuthKeyForLogin(authKey);
-            
+
             if (!validationResult.isSuccess()) {
                 logger.warn("登录失败，认证密钥验证失败: {}", validationResult.getMessage());
+
+                // 记录登录失败日志
+                authService.logEmailOperation(authKey, EmailLog.OperationType.LOGIN,
+                                            null, EmailLog.OperationResult.FAILED,
+                                            validationResult.getMessage(), request, System.currentTimeMillis() - startTime);
+
                 response.put("success", false);
                 response.put("message", validationResult.getMessage());
                 return ResponseEntity.badRequest().body(response);
@@ -80,6 +93,11 @@ public class LoginController {
 
             // 设置会话超时时间（30分钟）
             session.setMaxInactiveInterval(30 * 60);
+
+            // 记录登录成功日志
+            authService.logEmailOperation(authKey, EmailLog.OperationType.LOGIN,
+                                        null, EmailLog.OperationResult.SUCCESS,
+                                        null, request, System.currentTimeMillis() - startTime);
 
             response.put("success", true);
             response.put("message", "登录成功");
@@ -109,6 +127,13 @@ public class LoginController {
 
         } catch (Exception e) {
             logger.error("登录过程中发生异常: {}", e.getMessage(), e);
+
+            // 记录登录异常日志
+            String authKey = loginRequest != null ? loginRequest.getAuthKey() : "";
+            authService.logEmailOperation(authKey, EmailLog.OperationType.LOGIN,
+                                        null, EmailLog.OperationResult.FAILED,
+                                        "登录过程中发生异常: " + e.getMessage(), request, System.currentTimeMillis() - startTime);
+
             response.put("success", false);
             response.put("message", "登录失败，系统异常");
             return ResponseEntity.status(500).body(response);
@@ -125,15 +150,24 @@ public class LoginController {
     @PostMapping("/logout")
     public ResponseEntity<Map<String, Object>> logout(HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
-        
+        long startTime = System.currentTimeMillis();
+
         try {
             HttpSession session = request.getSession(false);
-            
+            String authKey = null;
+
             if (session != null) {
+                // 获取当前用户的认证密钥
+                authKey = (String) session.getAttribute(SESSION_AUTH_KEY);
                 String sessionId = session.getId();
                 session.invalidate();
                 logger.info("用户退出登录成功，会话ID: {}", sessionId);
             }
+
+            // 记录退出成功日志
+            authService.logEmailOperation(authKey != null ? authKey : "", EmailLog.OperationType.LOGOUT,
+                                        null, EmailLog.OperationResult.SUCCESS,
+                                        null, request, System.currentTimeMillis() - startTime);
 
             response.put("success", true);
             response.put("message", "退出登录成功");
@@ -141,6 +175,12 @@ public class LoginController {
 
         } catch (Exception e) {
             logger.error("退出登录过程中发生异常: {}", e.getMessage(), e);
+
+            // 记录退出异常日志
+            authService.logEmailOperation("", EmailLog.OperationType.LOGOUT,
+                                        null, EmailLog.OperationResult.FAILED,
+                                        "退出登录过程中发生异常: " + e.getMessage(), request, System.currentTimeMillis() - startTime);
+
             response.put("success", false);
             response.put("message", "退出登录失败");
             return ResponseEntity.status(500).body(response);
