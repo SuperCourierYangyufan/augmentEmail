@@ -43,6 +43,9 @@ public class EmailService {
 
     // 验证第二个邮箱关键字
     private static final String VERIFICATION_KEYWORD_SECOND = "cursor";
+
+    // 校验邮件关键字（不区分大小写）
+    private static final String VERIFY_EMAIL_KEYWORD = "verify email";
     
     // 邮箱连接相关对象
     private Session session;
@@ -229,7 +232,156 @@ public class EmailService {
             }
         }
     }
-    
+
+    /**
+     * 获取指定邮箱地址的最新校验地址邮件
+     * 查找包含"Verify email"关键字的邮件，提取其中的校验链接
+     * 按时间倒序遍历，返回最新的符合条件的校验地址
+     *
+     * @param emailAddress 目标邮箱地址
+     * @return 校验地址内容，如果没有找到包含相关关键字的校验地址邮件则返回null
+     */
+    public String getVerificationUrl(String emailAddress) {
+        Folder folder = null;
+
+        try {
+            logger.info("开始获取邮箱 {} 的校验地址", emailAddress);
+
+            // 1. 确保连接有效
+            ensureConnection();
+
+            // 2. 打开收件箱文件夹
+            folder = store.getFolder("INBOX");
+            folder.open(Folder.READ_ONLY);
+
+            logger.info("成功打开收件箱，邮件总数: {}", folder.getMessageCount());
+
+            // 3. 搜索发送给指定邮箱地址的邮件
+            RecipientStringTerm recipientTerm = new RecipientStringTerm(Message.RecipientType.TO, emailAddress);
+            Message[] messages = folder.search(recipientTerm);
+
+            if (messages.length == 0) {
+                logger.warn("未找到发送给邮箱 {} 的邮件", emailAddress);
+                return null;
+            }
+
+            // 4. 按时间倒序遍历邮件，查找包含verify email关键字的最新邮件
+            logger.info("找到 {} 封相关邮件，开始按时间倒序查找包含verify email关键字的邮件", messages.length);
+
+            // 从最新邮件开始遍历
+            for (int i = messages.length - 1; i >= 0; i--) {
+                Message message = messages[i];
+                logger.debug("正在处理第 {} 封邮件，发送时间: {}", (messages.length - i), message.getSentDate());
+
+                try {
+                    // 5. 提取邮件内容
+                    String content = getTextContent(message);
+                    if (content == null) {
+                        logger.debug("无法获取第 {} 封邮件内容，跳过", (messages.length - i));
+                        continue;
+                    }
+
+                    // 6. 检查邮件内容是否包含verify email关键字（不区分大小写）
+                    String lowerContent = content.toLowerCase();
+                    boolean containsVerifyEmail = lowerContent.contains(VERIFY_EMAIL_KEYWORD);
+
+                    if (!containsVerifyEmail) {
+                        logger.debug("第 {} 封邮件不包含verify email关键字，跳过", (messages.length - i));
+                        continue;
+                    }
+
+                    logger.info("第 {} 封邮件包含verify email关键字，开始提取校验地址", (messages.length - i));
+
+                    // 7. 提取校验地址（用户将提供正则逻辑）
+                    String verificationUrl = extractVerificationUrl(content);
+
+                    if (verificationUrl != null) {
+                        logger.info("成功从包含verify email关键字的邮件中提取校验地址: {}", verificationUrl);
+                        return verificationUrl;
+                    } else {
+                        logger.debug("第 {} 封邮件包含关键字但未找到校验地址，继续查找", (messages.length - i));
+                    }
+
+                } catch (Exception e) {
+                    logger.warn("处理第 {} 封邮件时发生异常: {}，继续处理下一封", (messages.length - i), e.getMessage());
+                }
+            }
+
+            // 如果遍历完所有邮件都没有找到符合条件的校验地址
+            logger.warn("在所有 {} 封邮件中都未找到包含verify email关键字且包含校验地址的邮件", messages.length);
+            return null;
+
+        } catch (Exception e) {
+            logger.error("获取校验地址时发生异常: {}", e.getMessage(), e);
+            return null;
+        } finally {
+            // 6. 关闭文件夹（但保持Store连接用于复用）
+            if (folder != null && folder.isOpen()) {
+                try {
+                    folder.close(false);
+                } catch (MessagingException e) {
+                    logger.error("关闭邮箱文件夹时发生异常: {}", e.getMessage());
+                }
+            }
+        }
+    }
+
+    /**
+     * 从邮件内容中提取校验地址
+     * 专门针对Proton邮件格式进行优化，提取完整的校验链接
+     *
+     * @param content 邮件内容
+     * @return 校验地址，如果未找到则返回null
+     */
+    private String extractVerificationUrl(String content) {
+        try {
+            logger.debug("开始从邮件内容中提取校验地址");
+
+            // 方法1: 优先匹配Markdown格式的链接 [Verify email](URL)
+            Pattern markdownLinkPattern = Pattern.compile("\\[Verify email\\]\\((https://[^)]+)\\)");
+            Matcher markdownMatcher = markdownLinkPattern.matcher(content);
+            if (markdownMatcher.find()) {
+                String url = markdownMatcher.group(1);
+                logger.info("通过Markdown格式成功提取校验地址: {}", url);
+                return url;
+            }
+
+            // 方法2: 匹配Proton特定的校验链接格式
+            Pattern protonPattern = Pattern.compile("(https://account\\.proton\\.me/verify-email\\?[^\\s\\)\\]]+)");
+            Matcher protonMatcher = protonPattern.matcher(content);
+            if (protonMatcher.find()) {
+                String url = protonMatcher.group(1);
+                logger.info("通过Proton格式成功提取校验地址: {}", url);
+                return url;
+            }
+
+            // 方法3: 通用的verify-email链接匹配
+            Pattern verifyPattern = Pattern.compile("(https://[^\\s]+/verify-email[^\\s\\)\\]]+)");
+            Matcher verifyMatcher = verifyPattern.matcher(content);
+            if (verifyMatcher.find()) {
+                String url = verifyMatcher.group(1);
+                logger.info("通过通用verify-email格式成功提取校验地址: {}", url);
+                return url;
+            }
+
+            // 方法4: 最后尝试匹配任何包含verify关键字的HTTPS链接
+            Pattern generalPattern = Pattern.compile("(https://[^\\s]+verify[^\\s\\)\\]]+)");
+            Matcher generalMatcher = generalPattern.matcher(content);
+            if (generalMatcher.find()) {
+                String url = generalMatcher.group(1);
+                logger.info("通过通用verify格式成功提取校验地址: {}", url);
+                return url;
+            }
+
+            logger.warn("未能从邮件内容中提取到校验地址");
+            return null;
+
+        } catch (Exception e) {
+            logger.error("提取校验地址时发生异常: {}", e.getMessage(), e);
+            return null;
+        }
+    }
+
     /**
      * 提取邮件的文本内容
      * 支持纯文本和HTML格式的邮件

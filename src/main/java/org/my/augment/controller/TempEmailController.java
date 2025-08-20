@@ -406,6 +406,69 @@ public class TempEmailController {
     }
 
     /**
+     * 获取邮箱校验地址
+     * 调用EmailService获取校验地址，支持重试机制
+     *
+     * @param emailAddress 邮箱地址
+     * @param request HTTP请求对象
+     * @return 校验地址内容
+     */
+    @GetMapping("/verification-url")
+    public ResponseEntity<Map<String, Object>> getVerificationUrl(@RequestParam String emailAddress,
+                                                                 HttpServletRequest request) {
+        try {
+            // 获取当前用户的授权key
+            String authKey = LoginController.getCurrentAuthKey(request);
+            if (authKey == null) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "用户未登录或会话已过期");
+                return ResponseEntity.status(401).body(errorResponse);
+            }
+
+            logger.info("获取校验地址请求，授权key: {}, 邮箱: {}", authKey, emailAddress);
+
+            // 对于临时邮箱库中的邮箱，检查是否有效
+            Optional<TempEmail> tempEmailOpt = tempEmailService.findByEmailAddress(emailAddress, authKey);
+            if (tempEmailOpt.isPresent() && !tempEmailService.isEmailValid(emailAddress, authKey)) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "邮箱已过期或已封禁");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+
+            // 调用EmailService获取校验地址
+            String verificationUrl = emailService.getVerificationUrl(emailAddress);
+
+            Map<String, Object> response = new HashMap<>();
+
+            if (verificationUrl != null && !verificationUrl.trim().isEmpty()) {
+                response.put("success", true);
+                response.put("verificationUrl", verificationUrl);
+                response.put("message", "获取校验地址成功");
+
+                logger.info("成功获取校验地址: {}", verificationUrl);
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("success", false);
+                response.put("message", "未找到校验地址邮件");
+
+                logger.warn("未找到校验地址邮件，邮箱: {}", emailAddress);
+                return ResponseEntity.ok(response); // 返回200状态码，让前端处理重试
+            }
+
+        } catch (Exception e) {
+            logger.error("获取校验地址失败: {}", e.getMessage(), e);
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "获取校验地址失败: " + e.getMessage());
+
+            return ResponseEntity.ok(errorResponse); // 返回200状态码，让前端处理重试
+        }
+    }
+
+    /**
      * 删除指定邮箱的所有邮件
      * 调用EmailService删除邮箱中的所有邮件
      *

@@ -482,6 +482,16 @@
             box-shadow: 0 12px 40px rgba(59, 130, 246, 0.5);
         }
 
+        .btn-url-modern {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            box-shadow: 0 8px 32px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-url-modern:hover {
+            box-shadow: 0 12px 40px rgba(16, 185, 129, 0.5);
+        }
+
         .btn-delete-modern {
             background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
             border: 1px solid rgba(245, 158, 11, 0.3);
@@ -1391,6 +1401,25 @@
             </div>
             <div class="modal-actions">
                 <button class="btn" onclick="hideVerificationModal()" style="background: #e9ecef; color: #666;">关闭</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 校验地址模态框 -->
+    <div id="verificationUrlModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">校验地址</h2>
+                <p id="verificationUrlEmailAddress" style="color: #666;"></p>
+            </div>
+            <div style="text-align: center; padding: 20px;">
+                <div id="verificationUrl" style="font-size: 1.2rem; font-weight: bold; color: #10b981; margin-bottom: 20px; word-break: break-all; line-height: 1.4; cursor: pointer; padding: 10px; border-radius: 8px; transition: background-color 0.3s;" onclick="copyVerificationUrl()">
+                    正在获取...
+                </div>
+                <p style="color: #666; font-size: 0.9rem;">请点击上方校验地址进行复制使用</p>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" onclick="hideVerificationUrlModal()" style="background: #e9ecef; color: #666;">关闭</button>
             </div>
         </div>
     </div>

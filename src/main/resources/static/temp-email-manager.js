@@ -10,6 +10,8 @@
 let emailList = [];
 let currentVerificationCode = '';
 let verificationCodeTask = null; // 当前验证码获取任务
+let currentVerificationUrl = '';
+let verificationUrlTask = null; // 当前校验地址获取任务
 
 // 分页相关变量
 let currentPage = 1;
@@ -178,6 +180,14 @@ function renderEmailList() {
                                     <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
                                 <span>获取验证码</span>
+                                <div class="btn-glow"></div>
+                            </button>
+                            <button class="action-btn-modern btn-url-modern" onclick="getVerificationUrl('${email.emailAddress}')" title="获取校验地址">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M10 13A5 5 0 0 0 7.54 7.54L4.46 4.46A5 5 0 0 0 4.46 19.54L7.54 16.46A5 5 0 0 0 13 10L10 13Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M14 11A5 5 0 0 0 16.46 16.46L19.54 19.54A5 5 0 0 0 19.54 4.46L16.46 7.54A5 5 0 0 0 11 14L14 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                <span>获取校验地址</span>
                                 <div class="btn-glow"></div>
                             </button>
                             <button class="action-btn-modern btn-delete-modern" onclick="deleteAllEmails('${email.emailAddress}')" title="删除所有邮件">
@@ -505,6 +515,61 @@ async function getVerificationCode(emailAddress) {
 }
 
 /**
+ * 获取校验地址（带重试机制）
+ */
+async function getVerificationUrl(emailAddress) {
+    // 如果已有任务在运行，先取消它
+    if (verificationUrlTask) {
+        verificationUrlTask.cancelled = true;
+        verificationUrlTask = null;
+    }
+
+    // 显示校验地址模态框
+    showVerificationUrlModal(emailAddress);
+
+    // 创建新的任务对象
+    verificationUrlTask = { cancelled: false };
+    const currentTask = verificationUrlTask;
+
+    try {
+        const verificationUrl = await getVerificationUrlWithRetry(emailAddress, 20, currentTask);
+
+        // 检查任务是否被取消
+        if (currentTask.cancelled) {
+            console.log('校验地址获取任务已被取消');
+            return;
+        }
+
+        if (verificationUrl) {
+            currentVerificationUrl = verificationUrl;
+            document.getElementById('verificationUrl').textContent = verificationUrl;
+
+            // 更新使用统计
+            loadEmailStatistics();
+            loadEmailList();
+        } else {
+            document.getElementById('verificationUrl').textContent = '获取失败';
+            showError('获取校验地址失败，已重试20次');
+        }
+    } catch (error) {
+        // 检查任务是否被取消
+        if (currentTask.cancelled) {
+            console.log('校验地址获取任务已被取消');
+            return;
+        }
+
+        console.error('获取校验地址异常:', error);
+        document.getElementById('verificationUrl').textContent = '网络错误';
+        showError('网络错误，请重试');
+    } finally {
+        // 清理任务引用
+        if (verificationUrlTask === currentTask) {
+            verificationUrlTask = null;
+        }
+    }
+}
+
+/**
  * 获取验证码重试机制
  * @param {string} emailAddress 邮箱地址
  * @param {number} maxRetries 最大重试次数
@@ -602,6 +667,91 @@ async function getVerificationCodeWithRetry(emailAddress, maxRetries = 20, task 
 }
 
 /**
+ * 获取校验地址重试机制
+ * @param {string} emailAddress 邮箱地址
+ * @param {number} maxRetries 最大重试次数
+ * @param {object} task 任务对象，用于取消操作
+ * @returns {Promise<string|null>} 校验地址或null
+ */
+async function getVerificationUrlWithRetry(emailAddress, maxRetries = 20, task = null) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        // 检查任务是否被取消
+        if (task && task.cancelled) {
+            console.log('校验地址获取任务被取消');
+            return null;
+        }
+
+        try {
+            console.log(`尝试获取校验地址，第 ${attempt}/${maxRetries} 次`);
+
+            // 更新校验地址显示状态
+            if (document.getElementById('verificationUrl')) {
+                document.getElementById('verificationUrl').textContent = `正在获取... (${attempt}/${maxRetries})`;
+            }
+
+            const response = await fetch(`/api/temp-email/verification-url?emailAddress=${encodeURIComponent(emailAddress)}`, {
+                method: 'GET',
+                credentials: 'include'
+            });
+
+            // 检查任务是否被取消
+            if (task && task.cancelled) {
+                console.log('校验地址获取任务被取消');
+                return null;
+            }
+
+            if (response.ok) {
+                const result = await response.json();
+
+                // 再次检查任务是否被取消
+                if (task && task.cancelled) {
+                    console.log('校验地址获取任务被取消');
+                    return null;
+                }
+
+                if (result.success && result.verificationUrl) {
+                    console.log(`第 ${attempt} 次尝试成功获取校验地址: ${result.verificationUrl}`);
+                    return result.verificationUrl;
+                } else {
+                    console.warn(`第 ${attempt} 次尝试失败: ${result.message}`);
+
+                    // 如果不是最后一次尝试，等待5秒后重试
+                    if (attempt < maxRetries) {
+                        console.log(`等待5秒后进行第 ${attempt + 1} 次尝试...`);
+                        await new Promise(resolve => setTimeout(resolve, 5000));
+                    }
+                }
+            } else {
+                console.error(`第 ${attempt} 次尝试HTTP错误: ${response.status}`);
+
+                // 如果不是最后一次尝试，等待5秒后重试
+                if (attempt < maxRetries) {
+                    console.log(`等待5秒后进行第 ${attempt + 1} 次尝试...`);
+                    await new Promise(resolve => setTimeout(resolve, 5000));
+                }
+            }
+        } catch (error) {
+            console.error(`第 ${attempt} 次尝试异常: ${error.message}`);
+
+            // 检查任务是否被取消
+            if (task && task.cancelled) {
+                console.log('校验地址获取任务被取消');
+                return null;
+            }
+
+            // 如果不是最后一次尝试，等待5秒后重试
+            if (attempt < maxRetries) {
+                console.log(`等待5秒后进行第 ${attempt + 1} 次尝试...`);
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+        }
+    }
+
+    console.error(`获取校验地址失败，已重试 ${maxRetries} 次`);
+    return null;
+}
+
+/**
  * 显示验证码模态框
  */
 function showVerificationModal(emailAddress) {
@@ -626,6 +776,30 @@ function hideVerificationModal() {
 }
 
 /**
+ * 显示校验地址模态框
+ */
+function showVerificationUrlModal(emailAddress) {
+    document.getElementById('verificationUrlEmailAddress').textContent = emailAddress;
+    document.getElementById('verificationUrl').textContent = '正在获取...';
+    document.getElementById('verificationUrlModal').style.display = 'block';
+    currentVerificationUrl = '';
+}
+
+/**
+ * 隐藏校验地址模态框
+ */
+function hideVerificationUrlModal() {
+    // 取消正在进行的校验地址获取任务
+    if (verificationUrlTask) {
+        verificationUrlTask.cancelled = true;
+        verificationUrlTask = null;
+        console.log('已取消校验地址获取任务');
+    }
+
+    document.getElementById('verificationUrlModal').style.display = 'none';
+}
+
+/**
  * 复制验证码
  */
 function copyVerificationCode() {
@@ -645,6 +819,29 @@ function copyVerificationCode() {
         document.execCommand('copy');
         document.body.removeChild(textArea);
         showSuccess('验证码已复制到剪贴板');
+    });
+}
+
+/**
+ * 复制校验地址
+ */
+function copyVerificationUrl() {
+    if (!currentVerificationUrl) {
+        showError('没有可复制的校验地址');
+        return;
+    }
+
+    navigator.clipboard.writeText(currentVerificationUrl).then(() => {
+        showSuccess('校验地址已复制到剪贴板');
+    }).catch(() => {
+        // 降级方案
+        const textArea = document.createElement('textarea');
+        textArea.value = currentVerificationUrl;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        showSuccess('校验地址已复制到剪贴板');
     });
 }
 
