@@ -14,11 +14,15 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 
+import java.time.LocalDate;
+import java.time.Year;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +38,19 @@ public class TempEmailController {
 
     private static final Logger logger = LoggerFactory.getLogger(TempEmailController.class);
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final String EMAIL_DOMAIN = "@supercourier.top";
+    private static final String[] FIRST_NAMES = {
+        "Emma", "Olivia", "Liam", "Noah", "Ava", "Sophia",
+        "Mason", "Isabella", "Ethan", "Mia", "Lucas", "Amelia"
+    };
+    private static final String[] LAST_NAMES = {
+        "Smith", "Johnson", "Brown", "Taylor", "Anderson", "Thomas",
+        "Jackson", "White", "Harris", "Martin", "Thompson", "Garcia"
+    };
+    private static final int MIN_AGE = 25;
+    private static final int MAX_AGE = 60;
+    private static final DateTimeFormatter BIRTHDAY_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyyMMdd");
 
     @Autowired
     private TempEmailService tempEmailService;
@@ -666,17 +683,41 @@ public class TempEmailController {
     }
 
     /**
-     * 调用AugmentController生成临时邮箱
-     * 使用当前用户的authKey
+     * 使用随机姓名与生日构造可信的临时邮箱地址。
      *
-     * @param authKey 当前用户的授权密钥
-     * @param request HTTP请求对象
-     * @return 生成的邮箱地址
+     * @return 包含域名的完整邮箱地址
+     */
+    private String buildCredibleTempEmail() {
+        ThreadLocalRandom random = ThreadLocalRandom.current();
+
+        String firstName = FIRST_NAMES[random.nextInt(FIRST_NAMES.length)];
+        String lastName = LAST_NAMES[random.nextInt(LAST_NAMES.length)];
+
+        LocalDate now = LocalDate.now();
+        int age = random.nextInt(MIN_AGE, MAX_AGE + 1);
+        int birthYear = now.getYear() - age;
+        int dayOfYear = random.nextInt(1, Year.of(birthYear).length() + 1);
+        LocalDate birthday = LocalDate.ofYearDay(birthYear, dayOfYear);
+
+        String localPart = (firstName + "." + lastName
+                + birthday.format(BIRTHDAY_FORMATTER)).toLowerCase(Locale.ROOT);
+        int numericSuffix = random.nextInt(10, 100);
+
+        return localPart + numericSuffix + EMAIL_DOMAIN;
+    }
+
+    /**
+     * 生成可信的临时邮箱地址，复用认证逻辑并扣减密钥额度。
+     *
+     * @param authKey 当前用户的认证密钥
+     * @param request HTTP 请求对象
+     * @return 生成的临时邮箱地址
      */
     private String generateTempEmailFromAugmentController(String authKey, HttpServletRequest request) {
         try {
             // 验证认证密钥
-            AuthService.AuthValidationResult validationResult = authService.validateAuthKey(authKey);
+            AuthService.AuthValidationResult validationResult =
+                    authService.validateAuthKey(authKey);
             if (!validationResult.isSuccess()) {
                 logger.warn("认证失败: {}", validationResult.getMessage());
                 return null;
@@ -689,30 +730,7 @@ public class TempEmailController {
                 return null;
             }
 
-            // 生成临时邮箱（复用AugmentController的逻辑）
-            StringBuilder emailBuilder = new StringBuilder();
-
-            // 随机字母开头
-            String letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            char randomLetter = letters.charAt((int) (Math.random() * letters.length()));
-            emailBuilder.append(randomLetter);
-
-            // 当前时间戳
-            long timestamp = System.currentTimeMillis();
-            emailBuilder.append(timestamp);
-
-            // 随机字符或数字10位
-            String alphanumeric = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            for (int i = 0; i < 10; i++) {
-                char randomChar = alphanumeric.charAt((int) (Math.random() * alphanumeric.length()));
-                emailBuilder.append(randomChar);
-            }
-
-            // 添加域名
-            emailBuilder.append("@supercourier.top");
-
-            String generatedEmail = emailBuilder.toString();
-
+            String generatedEmail = buildCredibleTempEmail();
             logger.info("成功生成临时邮箱: {}, 授权密钥使用次数已更新", generatedEmail);
 
             return generatedEmail;
