@@ -1,29 +1,30 @@
 package org.my.augment.controller;
 
-import org.my.augment.entity.TempEmail;
-import org.my.augment.entity.AuthKey;
-import org.my.augment.entity.EmailLog;
-import org.my.augment.service.TempEmailService;
-import org.my.augment.service.EmailService;
-import org.my.augment.service.AuthService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import javax.servlet.http.HttpServletRequest;
-
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import org.my.augment.entity.AuthKey;
+import org.my.augment.entity.EmailLog;
+import org.my.augment.entity.TempEmail;
+import org.my.augment.service.AuthService;
+import org.my.augment.service.EmailService;
+import org.my.augment.service.TempEmailService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 临时邮箱管理控制器
@@ -699,8 +700,7 @@ public class TempEmailController {
         int dayOfYear = random.nextInt(1, Year.of(birthYear).length() + 1);
         LocalDate birthday = LocalDate.ofYearDay(birthYear, dayOfYear);
 
-        String localPart = (firstName + "." + lastName
-                + birthday.format(BIRTHDAY_FORMATTER)).toLowerCase(Locale.ROOT);
+        String localPart = (firstName  + lastName + birthday.format(BIRTHDAY_FORMATTER)).toLowerCase(Locale.ROOT);
         int numericSuffix = random.nextInt(10, 100);
 
         return localPart + numericSuffix + EMAIL_DOMAIN;
