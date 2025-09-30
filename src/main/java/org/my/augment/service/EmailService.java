@@ -8,9 +8,19 @@ import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.mail.*;
 import javax.mail.search.RecipientStringTerm;
+import javax.mail.internet.InternetAddress;
 import java.util.Properties;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.my.augment.service.dto.EmailContentDto;
 
 /**
  * 邮箱服务类
@@ -433,6 +443,267 @@ public class EmailService {
         }
         
         return result.toString();
+    }
+
+    /**
+     * 获取优先HTML的正文内容（找不到HTML则回退纯文本）
+     */
+    private String getPreferredContent(Message message) throws Exception {
+        if (message.isMimeType("text/html")) {
+            Object content = message.getContent();
+            return content != null ? content.toString() : null;
+        } else if (message.isMimeType("text/plain")) {
+            Object content = message.getContent();
+            return content != null ? content.toString() : null;
+        } else if (message.isMimeType("multipart/*")) {
+            Multipart multipart = (Multipart) message.getContent();
+            String html = getHtmlFromMultipart(multipart);
+            if (html != null) return html;
+            return getPlainTextFromMultipart(multipart);
+        }
+        return null;
+    }
+
+    /**
+     * 从复合内容中优先提取HTML
+     */
+    private String getHtmlFromMultipart(Multipart multipart) throws Exception {
+        int count = multipart.getCount();
+        for (int i = 0; i < count; i++) {
+            BodyPart bodyPart = multipart.getBodyPart(i);
+            if (bodyPart.isMimeType("text/html")) {
+                Object content = bodyPart.getContent();
+                return content != null ? content.toString() : null;
+            } else if (bodyPart.isMimeType("multipart/*")) {
+                String nested = getHtmlFromMultipart((Multipart) bodyPart.getContent());
+                if (nested != null) return nested;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 从复合内容中提取纯文本（作为回退）
+     */
+    private String getPlainTextFromMultipart(Multipart multipart) throws Exception {
+        StringBuilder sb = new StringBuilder();
+        int count = multipart.getCount();
+        for (int i = 0; i < count; i++) {
+            BodyPart bodyPart = multipart.getBodyPart(i);
+            if (bodyPart.isMimeType("text/plain")) {
+                Object content = bodyPart.getContent();
+                if (content != null) sb.append(content.toString());
+            } else if (bodyPart.isMimeType("multipart/*")) {
+                String nested = getPlainTextFromMultipart((Multipart) bodyPart.getContent());
+                if (nested != null) sb.append(nested);
+            }
+        }
+        return sb.length() > 0 ? sb.toString() : null;
+    }
+
+    /**
+     * 提取发件人显示名 <邮箱>
+     */
+    private String getSenderDisplay(Message message) {
+        try {
+            Address[] from = message.getFrom();
+            if (from != null && from.length > 0) {
+                Address a = from[0];
+                if (a instanceof InternetAddress) {
+                    InternetAddress ia = (InternetAddress) a;
+                    String personal = ia.getPersonal();
+                    String address = ia.getAddress();
+                    if (personal != null && !personal.trim().isEmpty()) {
+                        return personal + " <" + address + ">";
+                    } else {
+                        return address;
+                    }
+                }
+                return a.toString();
+            }
+        } catch (Exception e) {
+            logger.warn("提取发件人信息失败: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * 获取指定邮箱地址的最新一封邮件的三项内容：发送人/发送时间/完整正文（优先HTML）
+     * 未找到则返回 null
+     */
+    public EmailContentDto getLatestEmailContent(String emailAddress) {
+        Folder folder = null;
+        try {
+            logger.info("开始获取 {} 的最新邮件内容", emailAddress);
+
+            ensureConnection();
+
+            folder = store.getFolder("INBOX");
+            folder.open(Folder.READ_ONLY);
+
+            RecipientStringTerm recipientTerm = new RecipientStringTerm(Message.RecipientType.TO, emailAddress);
+            Message[] messages = folder.search(recipientTerm);
+
+            if (messages == null || messages.length == 0) {
+                logger.info("未找到发往 {} 的任何邮件", emailAddress);
+                return null;
+            }
+
+            // 选择时间最新的一封
+            Message latest = messages[0];
+            Date latestDate = latest.getSentDate();
+            for (int i = 1; i < messages.length; i++) {
+                Date d = messages[i].getSentDate();
+                if (latestDate == null || (d != null && d.after(latestDate))) {
+                    latest = messages[i];
+                    latestDate = d;
+                }
+            }
+
+            String sender = getSenderDisplay(latest);
+            String sentTime = null;
+            Date sd = latest.getSentDate();
+            if (sd != null) {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                sentTime = sdf.format(sd);
+            }
+            String content = getPreferredContent(latest);
+            if (content == null) {
+                // 回退：尝试获取纯文本
+                content = getTextContent(latest);
+            }
+
+            if (sender == null && sentTime == null && (content == null || content.trim().isEmpty())) {
+                logger.info("最新邮件存在，但无法提取有效内容: {}", emailAddress);
+                return null;
+            }
+
+            return EmailContentDto.builder()
+                    .sender(sender)
+                    .sentTime(sentTime)
+                    .content(content)
+                    .build();
+
+        } catch (Exception e) {
+            logger.error("获取最新邮件内容异常: {}", e.getMessage(), e);
+            return null;
+        } finally {
+            if (folder != null && folder.isOpen()) {
+                try {
+                    folder.close(false);
+                } catch (MessagingException e) {
+                    logger.error("关闭收件夹异常: {}", e.getMessage());
+                }
+            }
+        }
+    }
+
+    /**
+     * 分页获取指定邮箱的所有邮件（按发送时间降序）
+     * @param emailAddress 目标邮箱地址
+     * @param pageIndex 0基页码
+     * @param size 页大小
+     * @return 分页结构：content/totalElements/totalPages/number/size/first/last
+     */
+    public Map<String, Object> listEmailContents(String emailAddress, int pageIndex, int size) {
+        Folder folder = null;
+        Map<String, Object> pageData = new HashMap<>();
+        try {
+            logger.info("分页获取 {} 的邮件内容, pageIndex={}, size={}", emailAddress, pageIndex, size);
+
+            ensureConnection();
+
+            folder = store.getFolder("INBOX");
+            folder.open(Folder.READ_ONLY);
+
+            RecipientStringTerm recipientTerm = new RecipientStringTerm(Message.RecipientType.TO, emailAddress);
+            Message[] messages = folder.search(recipientTerm);
+
+            if (messages == null || messages.length == 0) {
+                pageData.put("content", new ArrayList<>());
+                pageData.put("totalElements", 0);
+                pageData.put("totalPages", 0);
+                pageData.put("number", 0);
+                pageData.put("size", size);
+                pageData.put("first", true);
+                pageData.put("last", true);
+                return pageData;
+            }
+
+            List<Message> list = new ArrayList<>(Arrays.asList(messages));
+            list.sort((a, b) -> {
+                try {
+                    Date ad = a.getSentDate();
+                    Date bd = b.getSentDate();
+                    if (ad == null && bd == null) return 0;
+                    if (ad == null) return 1;
+                    if (bd == null) return -1;
+                    return bd.compareTo(ad); // 降序：最新在前
+                } catch (Exception e) {
+                    return 0;
+                }
+            });
+
+            int totalElements = list.size();
+            int totalPages = (int) Math.ceil((double) totalElements / Math.max(1, size));
+            int safePageIndex = Math.max(0, Math.min(pageIndex, Math.max(0, totalPages - 1)));
+            int start = safePageIndex * size;
+            int end = Math.min(start + size, totalElements);
+
+            List<EmailContentDto> contentDtos = new ArrayList<>();
+            if (start < end) {
+                for (int i = start; i < end; i++) {
+                    Message m = list.get(i);
+                    String sender = getSenderDisplay(m);
+                    String sentTime = null;
+                    Date sd = m.getSentDate();
+                    if (sd != null) {
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                        sentTime = sdf.format(sd);
+                    }
+                    String content = null;
+                    try {
+                        content = getPreferredContent(m);
+                        if (content == null) content = getTextContent(m);
+                    } catch (Exception ignore) {}
+
+                    contentDtos.add(EmailContentDto.builder()
+                            .sender(sender)
+                            .sentTime(sentTime)
+                            .content(content)
+                            .build());
+                }
+            }
+
+            pageData.put("content", contentDtos);
+            pageData.put("totalElements", totalElements);
+            pageData.put("totalPages", totalPages);
+            pageData.put("number", safePageIndex);
+            pageData.put("size", size);
+            pageData.put("first", safePageIndex == 0);
+            pageData.put("last", totalPages == 0 || safePageIndex >= totalPages - 1);
+            return pageData;
+
+        } catch (Exception e) {
+            logger.error("分页获取邮件内容异常: {}", e.getMessage(), e);
+            // 返回空页，避免前端崩溃
+            pageData.put("content", new ArrayList<>());
+            pageData.put("totalElements", 0);
+            pageData.put("totalPages", 0);
+            pageData.put("number", 0);
+            pageData.put("size", size);
+            pageData.put("first", true);
+            pageData.put("last", true);
+            return pageData;
+        } finally {
+            if (folder != null && folder.isOpen()) {
+                try {
+                    folder.close(false);
+                } catch (MessagingException e) {
+                    logger.error("关闭收件夹异常: {}", e.getMessage());
+                }
+            }
+        }
     }
     
     /**

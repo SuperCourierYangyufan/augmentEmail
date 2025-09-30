@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.my.augment.service.dto.EmailContentDto;
 
 /**
  * 临时邮箱管理控制器
@@ -110,6 +111,72 @@ public class TempEmailController {
             errorResponse.put("message", "获取邮箱列表失败: " + e.getMessage());
 
             return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    /**
+     * 获取指定临时邮箱的最新一封邮件内容（发送人/发送时间/完整正文）
+     * 鉴权由全局拦截/会话机制处理，此处不做额外鉴权
+     *
+     * @param emailAddress 邮箱地址
+     * @return 邮件内容DTO
+     */
+    @GetMapping("/email-content")
+    public ResponseEntity<Map<String, Object>> getLatestEmailContent(@RequestParam String emailAddress) {
+        try {
+            logger.info("获取最新邮件内容, 邮箱: {}", emailAddress);
+
+            EmailContentDto dto = emailService.getLatestEmailContent(emailAddress);
+
+            Map<String, Object> response = new HashMap<>();
+            if (dto == null) {
+                response.put("success", false);
+                response.put("message", "未找到任何邮件");
+                return ResponseEntity.ok(response);
+            }
+
+            response.put("success", true);
+            response.put("data", dto);
+            response.put("message", "查询成功");
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("获取最新邮件内容失败: {}", e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "获取最新邮件内容失败: " + e.getMessage());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+
+    /**
+     * 分页获取指定临时邮箱的所有邮件（发送人/发送时间/完整正文）
+     * @param emailAddress 邮箱地址
+     * @param page 页码（从1开始）
+     * @param size 每页大小
+     */
+    @GetMapping("/emails")
+    public ResponseEntity<Map<String, Object>> getEmailMessagesPage(@RequestParam String emailAddress,
+                                                                    @RequestParam(defaultValue = "1") int page,
+                                                                    @RequestParam(defaultValue = "5") int size) {
+        try {
+            logger.info("分页获取邮件, 邮箱: {}, page: {}, size: {}", emailAddress, page, size);
+
+            int pageIndex = Math.max(0, page - 1);
+            Map<String, Object> pageData = emailService.listEmailContents(emailAddress, pageIndex, size);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", pageData);
+            response.put("message", "查询成功");
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            logger.error("分页获取邮件失败: {}", e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("success", false);
+            error.put("message", "分页获取邮件失败: " + e.getMessage());
+            return ResponseEntity.status(500).body(error);
         }
     }
 

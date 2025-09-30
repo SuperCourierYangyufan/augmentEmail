@@ -1387,6 +1387,30 @@
 
 
     <!-- 验证码模态框 -->
+    <!-- 邮件内容模态框 -->
+    <div id="emailContentModal" class="modal">
+        <div class="modal-content" style="max-width: 900px; width: 95%;">
+            <div class="modal-header" style="display:flex; align-items:center; justify-content: space-between; gap: 12px;">
+                <div>
+                    <h2 class="modal-title">邮件内容</h2>
+                    <div id="mailSentTime" style="color:#666; font-size:0.9rem; margin-top:4px;"></div>
+                    <div id="mailSender" style="color:#333; font-size:0.95rem; margin-top:2px; font-weight:600;"></div>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-success" onclick="refreshEmailContent()">刷新</button>
+                    <button class="btn" onclick="hideEmailContentModal()" style="background:#e9ecef; color:#666;">关闭</button>
+                </div>
+            </div>
+            <div id="mailBody" style="border:1px solid #e5e7eb; border-radius:10px; padding:16px; max-height:60vh; overflow:auto; background:#fff;">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    正在加载邮件内容...
+                </div>
+            </div>
+            <div id="mailPagination" class="pagination" style="margin-top:10px;"></div>
+        </div>
+    </div>
+
     <div id="verificationModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">

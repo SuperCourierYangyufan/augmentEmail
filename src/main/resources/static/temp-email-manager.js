@@ -175,11 +175,12 @@ function renderEmailList() {
 
                     <div class="email-actions-modern">
                         ${email.status === 'ACTIVE' ? `
-                            <button class="action-btn-modern btn-verify-modern" onclick="getVerificationCode('${email.emailAddress}')" title="获取验证码">
+                            <button class="action-btn-modern btn-verify-modern" onclick="showEmailContent('${email.emailAddress}')" title="查看邮件">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                                 </svg>
-                                <span>获取验证码</span>
+                                <span>查看邮件</span>
                                 <div class="btn-glow"></div>
                             </button>
                             <button class="action-btn-modern btn-url-modern" onclick="getVerificationUrl('${email.emailAddress}')" title="获取校验地址">
@@ -1332,4 +1333,217 @@ function goToAnnouncementManage() {
         console.error('权限验证失败:', error);
         showNotification('权限验证失败，无法访问公告管理', 'error');
     });
+}
+
+// ==================== 邮件内容查看 ====================
+
+// 当前正在查看邮件内容的邮箱地址
+let currentEmailContentAddress = '';
+let currentMailPage = 1;
+let mailPageSize = 5;
+let mailTotalPages = 0;
+let mailTotalElements = 0;
+
+/**
+ * 显示邮件内容模态框并加载内容
+ */
+function showEmailContent(emailAddress) {
+    currentEmailContentAddress = emailAddress;
+    const modal = document.getElementById('emailContentModal');
+    if (modal) {
+        modal.style.display = 'block';
+    }
+    // 重置内容
+    const senderEl = document.getElementById('mailSender');
+    const timeEl = document.getElementById('mailSentTime');
+    const bodyEl = document.getElementById('mailBody');
+    if (senderEl) senderEl.textContent = '';
+    if (timeEl) timeEl.textContent = '';
+    if (bodyEl) {
+        bodyEl.innerHTML = '<div class="loading"><div class="spinner"></div>正在加载邮件内容...</div>';
+    }
+
+    fetchEmailPage(emailAddress, 1);
+}
+
+/**
+ * 刷新当前邮件内容
+ */
+function refreshEmailContent() {
+    if (!currentEmailContentAddress) {
+        showError('没有可刷新的邮箱');
+        return;
+    }
+    fetchEmailPage(currentEmailContentAddress, currentMailPage);
+}
+
+/**
+ * 关闭邮件内容模态框
+ */
+function hideEmailContentModal() {
+    const modal = document.getElementById('emailContentModal');
+    if (modal) modal.style.display = 'none';
+}
+
+/**
+ * 拉取邮件内容
+ */
+async function fetchEmailPage(emailAddress, page = 1) {
+    try {
+        const response = await fetch(`/api/temp-email/emails?emailAddress=${encodeURIComponent(emailAddress)}&page=${page}&size=${mailPageSize}`);
+        if (handleUnauthorizedResponse(response)) {
+            return;
+        }
+        const result = await response.json();
+        if (response.ok && result.success && result.data) {
+            renderMailList(result.data);
+        } else {
+            renderEmptyEmailContent(result.message || '未找到邮件');
+        }
+    } catch (error) {
+        console.error('加载邮件内容失败:', error);
+        renderEmptyEmailContent('加载失败，请稍后重试');
+    }
+}
+
+/**
+ * 渲染邮件内容
+ */
+function renderMailList(pageData) {
+    const bodyEl = document.getElementById('mailBody');
+    const paginationEl = document.getElementById('mailPagination');
+
+    const items = pageData.content || [];
+    mailTotalElements = pageData.totalElements || 0;
+    mailTotalPages = pageData.totalPages || 0;
+    currentMailPage = (pageData.number || 0) + 1;
+
+    if (!bodyEl) return;
+
+    if (!items.length) {
+        bodyEl.innerHTML = '<div class="empty-state">暂无邮件</div>';
+        if (paginationEl) paginationEl.innerHTML = '';
+        return;
+    }
+
+    const listHtml = items.map(item => {
+        const sender = escapeHtml(item.sender || '');
+        const time = escapeHtml(item.sentTime || '');
+        const content = sanitizeHtml(item.content || '');
+        return `
+            <div class="email-card-modern" style="margin: 10px 0; padding: 0;">
+                <div class="email-card-content">
+                    <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom:10px;">
+                        <div style="font-weight:600; color:#1f2937;">${sender}</div>
+                        <div style="color:#64748b; font-size:12px;">${time}</div>
+                    </div>
+                    <div class="email-body" style="line-height:1.6; color:#374151;">${content}</div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    bodyEl.innerHTML = listHtml;
+    renderMailPagination();
+}
+
+/**
+ * 渲染空态
+ */
+function renderEmptyEmailContent(message) {
+    const bodyEl = document.getElementById('mailBody');
+    if (bodyEl) {
+        bodyEl.innerHTML = `<div class="empty-state">${escapeHtml(message || '未找到邮件')}</div>`;
+    }
+}
+
+/**
+ * 渲染分页控件（复用页面分页样式）
+ */
+function renderMailPagination() {
+    const pagination = document.getElementById('mailPagination');
+    if (!pagination) return;
+
+    if (mailTotalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+    }
+
+    let html = '<div class="pagination-container">';
+    html += `<div class="pagination-info">共 ${mailTotalElements} 封邮件，页 ${currentMailPage}/${mailTotalPages}</div>`;
+    html += '<div class="pagination-controls">';
+
+    // Prev
+    if (currentMailPage > 1) {
+        html += `<button class="btn btn-sm" onclick="changeMailPage(${currentMailPage - 1})">上一页</button>`;
+    } else {
+        html += '<button class="btn btn-sm" disabled>上一页</button>';
+    }
+
+    const startPage = Math.max(1, currentMailPage - 2);
+    const endPage = Math.min(mailTotalPages, currentMailPage + 2);
+    if (startPage > 1) {
+        html += `<button class="btn btn-sm" onclick="changeMailPage(1)">1</button>`;
+        if (startPage > 2) html += '<span class="pagination-ellipsis">...</span>';
+    }
+    for (let i = startPage; i <= endPage; i++) {
+        if (i === currentMailPage) {
+            html += `<button class="btn btn-sm active">${i}</button>`;
+        } else {
+            html += `<button class="btn btn-sm" onclick="changeMailPage(${i})">${i}</button>`;
+        }
+    }
+    if (endPage < mailTotalPages) {
+        if (endPage < mailTotalPages - 1) html += '<span class="pagination-ellipsis">...</span>';
+        html += `<button class="btn btn-sm" onclick="changeMailPage(${mailTotalPages})">${mailTotalPages}</button>`;
+    }
+
+    // Next
+    if (currentMailPage < mailTotalPages) {
+        html += `<button class="btn btn-sm" onclick="changeMailPage(${currentMailPage + 1})">下一页</button>`;
+    } else {
+        html += '<button class="btn btn-sm" disabled>下一页</button>';
+    }
+
+    html += '</div></div>';
+    pagination.innerHTML = html;
+}
+
+/**
+ * 切换邮件分页
+ */
+function changeMailPage(page) {
+    if (page < 1 || page > mailTotalPages) return;
+    fetchEmailPage(currentEmailContentAddress, page);
+}
+
+/**
+ * 简单HTML净化：移除<script>与事件处理器、javascript:链接
+ */
+function sanitizeHtml(html) {
+    if (!html) return '';
+    let out = html;
+    // 去除脚本标签
+    out = out.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '');
+    // 去除内联事件 on*
+    out = out.replace(/on[a-zA-Z]+\s*=\s*"[^"]*"/gi, '')
+             .replace(/on[a-zA-Z]+\s*=\s*'[^']*'/gi, '')
+             .replace(/on[a-zA-Z]+\s*=\s*[^\s>]+/gi, '');
+    // 限制 javascript: 链接
+    out = out.replace(/href\s*=\s*"javascript:[^"]*"/gi, 'href="#"')
+             .replace(/href\s*=\s*'javascript:[^']*'/gi, "href='#'")
+             .replace(/href\s*=\s*javascript:[^\s>]+/gi, 'href="#"');
+    return out;
+}
+
+// 点击模态外部关闭支持
+window.onclick = function(event) {
+    const verificationModal = document.getElementById('verificationModal');
+    const emailContentModal = document.getElementById('emailContentModal');
+    if (event.target === verificationModal) {
+        hideVerificationModal();
+    }
+    if (event.target === emailContentModal) {
+        hideEmailContentModal();
+    }
 }
