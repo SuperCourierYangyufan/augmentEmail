@@ -50,13 +50,13 @@ public interface TempEmailRepository extends JpaRepository<TempEmail, Long> {
     List<TempEmail> findAllEmailsOrderByCreateTimeDesc();
 
     /**
-     * 查询指定授权key的所有邮箱（包括封禁的）
+     * 查询指定授权key的所有正常状态邮箱（不包括封禁的）
      * 按创建时间降序排序（新的在前面）
      *
      * @param authKey 授权密钥
      * @return 邮箱列表，按创建时间降序排列
      */
-    @Query("SELECT t FROM TempEmail t WHERE t.authKey = :authKey ORDER BY t.createTime DESC")
+    @Query("SELECT t FROM TempEmail t WHERE t.authKey = :authKey AND t.status = 'ACTIVE' ORDER BY t.createTime DESC")
     List<TempEmail> findAllEmailsByAuthKeyOrderByCreateTimeDesc(@Param("authKey") String authKey);
 
     /**
