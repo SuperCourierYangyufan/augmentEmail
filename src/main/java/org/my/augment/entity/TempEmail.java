@@ -81,6 +81,12 @@ public class TempEmail {
     private LocalDateTime pinnedTime;
 
     /**
+     * 置顶说明
+     */
+    @Column(name = "pinned_description", length = 200)
+    private String pinnedDescription;
+
+    /**
      * 邮箱状态枚举
      */
     public enum EmailStatus {

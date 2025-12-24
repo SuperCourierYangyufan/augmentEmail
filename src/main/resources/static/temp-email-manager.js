@@ -157,6 +157,15 @@ function renderEmailList() {
                             <span>${generatedText}</span>
                             ${email.isPinned && email.pinnedTime ? `<span style="margin-left: 8px; color: #f59e0b; font-size: 12px;">置顶至: ${formatPinnedTime(email.pinnedTime)}</span>` : ''}
                         </div>
+                        ${email.isPinned && email.pinnedDescription ? `
+                        <div class="pin-description" style="margin-top: 8px; padding: 8px 12px; background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; border-radius: 4px; font-size: 13px; color: #92400e; position: relative;">
+                            <span style="font-weight: 500;">📌 ${email.pinnedDescription}</span>
+                            <button onclick="editPinDescription(${email.id}, '${(email.pinnedDescription || '').replace(/'/g, "\\'")}', event)" 
+                                    style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #d97706; cursor: pointer; font-size: 12px; padding: 2px 4px; border-radius: 2px; transition: background-color 0.2s;"
+                                    onmouseover="this.style.backgroundColor='rgba(217, 119, 6, 0.1)'"
+                                    onmouseout="this.style.backgroundColor='transparent'"
+                                    title="修改置顶说明">✏️</button>
+                        </div>` : ''}
                     </div>
 
                     <div class="email-address-section">
@@ -1588,12 +1597,13 @@ function formatPinnedTime(pinnedTime) {
 function showPinTimeModal(emailId) {
     currentPinEmailId = emailId;
     
-    // 设置默认时间为7天后
+    // 设置默认时间为当前时间
     const defaultTime = new Date();
-    defaultTime.setDate(defaultTime.getDate() + 7);
     const timeString = defaultTime.toISOString().slice(0, 16);
     
     document.getElementById('pinnedTimeInput').value = timeString;
+    document.getElementById('pinnedDescriptionInput').value = '';
+    updateDescriptionCounter();
     document.getElementById('pinTimeModal').style.display = 'block';
 }
 
@@ -1606,6 +1616,17 @@ function hidePinTimeModal() {
 }
 
 /**
+ * 更新置顶说明字符计数器
+ */
+function updateDescriptionCounter() {
+    const descriptionInput = document.getElementById('pinnedDescriptionInput');
+    const counter = document.getElementById('descriptionCounter');
+    if (descriptionInput && counter) {
+        counter.textContent = descriptionInput.value.length;
+    }
+}
+
+/**
  * 确认置顶邮箱
  */
 async function confirmPinEmail() {
@@ -1615,7 +1636,9 @@ async function confirmPinEmail() {
     }
     
     const pinnedTimeInput = document.getElementById('pinnedTimeInput');
+    const pinnedDescriptionInput = document.getElementById('pinnedDescriptionInput');
     const pinnedTime = pinnedTimeInput.value;
+    const pinnedDescription = pinnedDescriptionInput.value.trim();
     
     if (!pinnedTime) {
         showError('请选择置顶时间');
@@ -1625,18 +1648,24 @@ async function confirmPinEmail() {
     // 验证时间不能是过去时间
     const selectedTime = new Date(pinnedTime);
     const now = new Date();
-    if (selectedTime <= now) {
+    if (selectedTime < now) {
         showError('置顶时间不能是过去时间');
         return;
     }
     
     try {
+        const formData = new URLSearchParams();
+        formData.append('pinnedTime', pinnedTime);
+        if (pinnedDescription) {
+            formData.append('pinnedDescription', pinnedDescription);
+        }
+        
         const response = await fetch(`/api/temp-email/pin/${currentPinEmailId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: `pinnedTime=${encodeURIComponent(pinnedTime)}`
+            body: formData.toString()
         });
         
         if (handleUnauthorizedResponse(response)) {
@@ -1654,6 +1683,64 @@ async function confirmPinEmail() {
         }
     } catch (error) {
         console.error('置顶邮箱异常:', error);
+        showError('网络错误，请检查连接');
+    }
+}
+
+/**
+ * 编辑置顶说明
+ */
+function editPinDescription(emailId, currentDescription, event) {
+    event.stopPropagation(); // 阻止事件冒泡
+    
+    const newDescription = prompt('修改置顶说明:', currentDescription || '');
+    if (newDescription === null) { // 用户取消
+        return;
+    }
+    
+    if (newDescription.length > 200) {
+        showError('置顶说明不能超过200个字符');
+        return;
+    }
+    
+    // 调用置顶接口更新说明，使用当前时间作为置顶时间
+    const currentTime = new Date().toISOString().slice(0, -5); // 移除毫秒和时区信息
+    updatePinDescription(emailId, currentTime, newDescription.trim());
+}
+
+/**
+ * 更新置顶说明
+ */
+async function updatePinDescription(emailId, pinnedTime, pinnedDescription) {
+    try {
+        const formData = new URLSearchParams();
+        formData.append('pinnedTime', pinnedTime);
+        if (pinnedDescription) {
+            formData.append('pinnedDescription', pinnedDescription);
+        }
+        
+        const response = await fetch(`/api/temp-email/pin/${emailId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: formData.toString()
+        });
+        
+        if (handleUnauthorizedResponse(response)) {
+            return;
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showSuccess('置顶说明更新成功');
+            loadEmailList(); // 刷新列表
+        } else {
+            showError('更新失败: ' + result.message);
+        }
+    } catch (error) {
+        console.error('更新置顶说明异常:', error);
         showError('网络错误，请检查连接');
     }
 }
@@ -1688,6 +1775,15 @@ async function unpinEmail(emailId) {
         showError('网络错误，请检查连接');
     }
 }
+
+// 页面加载完成后的初始化
+document.addEventListener('DOMContentLoaded', function() {
+    // 为置顶说明输入框添加字符计数器事件监听
+    const pinnedDescriptionInput = document.getElementById('pinnedDescriptionInput');
+    if (pinnedDescriptionInput) {
+        pinnedDescriptionInput.addEventListener('input', updateDescriptionCounter);
+    }
+});
 
 // 点击模态外部关闭支持
 window.onclick = function(event) {

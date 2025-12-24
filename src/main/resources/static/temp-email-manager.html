@@ -1471,12 +1471,19 @@
     <div id="pinTimeModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 class="modal-title">设置置顶时间</h2>
-                <p style="color: #666; font-size: 0.9rem;">选择置顶到期时间，时间越早越靠前</p>
+                <h2 class="modal-title">设置置顶</h2>
+                <p style="color: #666; font-size: 0.9rem;">设置置顶到期时间和说明，时间越早越靠前</p>
             </div>
             <div class="form-group">
                 <label class="form-label">置顶到期时间</label>
                 <input type="datetime-local" id="pinnedTimeInput" class="form-input" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">置顶说明 <span style="color: #999; font-size: 0.8rem;">(可选，最多200字)</span></label>
+                <textarea id="pinnedDescriptionInput" class="form-input" rows="3" placeholder="请输入置顶说明，比如：重要邮箱、客户专用等..." maxlength="200" style="resize: vertical; min-height: 70px;"></textarea>
+                <div style="text-align: right; color: #999; font-size: 0.8rem; margin-top: 4px;">
+                    <span id="descriptionCounter">0</span>/200
+                </div>
             </div>
             <div class="modal-actions">
                 <button class="btn btn-primary" onclick="confirmPinEmail()">确认置顶</button>

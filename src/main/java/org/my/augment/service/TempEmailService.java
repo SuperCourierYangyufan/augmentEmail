@@ -213,6 +213,7 @@ public class TempEmailService {
         // 添加置顶信息
         emailMap.put("isPinned", email.getIsPinned() != null ? email.getIsPinned() : false);
         emailMap.put("pinnedTime", email.getPinnedTime());
+        emailMap.put("pinnedDescription", email.getPinnedDescription());
 
         return emailMap;
     }
@@ -445,10 +446,11 @@ public class TempEmailService {
      * 
      * @param emailId 邮箱ID
      * @param pinnedTime 置顶时间
+     * @param pinnedDescription 置顶说明
      * @return 是否置顶成功
      */
-    public boolean pinEmail(Long emailId, LocalDateTime pinnedTime) {
-        logger.info("开始置顶邮箱, ID: {}, 置顶时间: {}", emailId, pinnedTime);
+    public boolean pinEmail(Long emailId, LocalDateTime pinnedTime, String pinnedDescription) {
+        logger.info("开始置顶邮箱, ID: {}, 置顶时间: {}, 置顶说明: {}", emailId, pinnedTime, pinnedDescription);
 
         Optional<TempEmail> emailOpt = tempEmailRepository.findById(emailId);
         if (!emailOpt.isPresent()) {
@@ -459,9 +461,11 @@ public class TempEmailService {
         TempEmail email = emailOpt.get();
         email.setIsPinned(true);
         email.setPinnedTime(pinnedTime);
+        email.setPinnedDescription(pinnedDescription);
         tempEmailRepository.save(email);
         
-        logger.info("成功置顶邮箱: {}, ID: {}, 置顶时间: {}", email.getEmailAddress(), emailId, pinnedTime);
+        logger.info("成功置顶邮箱: {}, ID: {}, 置顶时间: {}, 置顶说明: {}", 
+                   email.getEmailAddress(), emailId, pinnedTime, pinnedDescription);
         return true;
     }
 
@@ -483,6 +487,7 @@ public class TempEmailService {
         TempEmail email = emailOpt.get();
         email.setIsPinned(false);
         email.setPinnedTime(null);
+        email.setPinnedDescription(null);
         tempEmailRepository.save(email);
         
         logger.info("成功取消置顶邮箱: {}, ID: {}", email.getEmailAddress(), emailId);

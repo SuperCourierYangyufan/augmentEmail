@@ -690,12 +690,14 @@ public class TempEmailController {
      *
      * @param emailId 邮箱ID
      * @param pinnedTime 置顶时间（ISO格式字符串）
+     * @param pinnedDescription 置顶说明
      * @param request HTTP请求对象
      * @return 置顶结果
      */
     @PostMapping("/pin/{emailId}")
     public ResponseEntity<Map<String, Object>> pinEmail(@PathVariable Long emailId,
                                                         @RequestParam String pinnedTime,
+                                                        @RequestParam(required = false) String pinnedDescription,
                                                         HttpServletRequest request) {
         try {
             // 获取当前用户的授权key
@@ -707,12 +709,13 @@ public class TempEmailController {
                 return ResponseEntity.status(401).body(errorResponse);
             }
 
-            logger.info("置顶邮箱请求，ID: {}, 置顶时间: {}, 授权key: {}", emailId, pinnedTime, authKey);
+            logger.info("置顶邮箱请求，ID: {}, 置顶时间: {}, 置顶说明: {}, 授权key: {}", 
+                       emailId, pinnedTime, pinnedDescription, authKey);
 
             // 解析置顶时间
             LocalDateTime pinnedDateTime = LocalDateTime.parse(pinnedTime);
 
-            boolean success = tempEmailService.pinEmail(emailId, pinnedDateTime);
+            boolean success = tempEmailService.pinEmail(emailId, pinnedDateTime, pinnedDescription);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", success);
