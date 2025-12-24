@@ -1,6 +1,7 @@
 package org.my.augment.controller;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Year;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -679,6 +680,105 @@ public class TempEmailController {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
             errorResponse.put("message", "获取统计信息失败: " + e.getMessage());
+
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    /**
+     * 置顶邮箱
+     *
+     * @param emailId 邮箱ID
+     * @param pinnedTime 置顶时间（ISO格式字符串）
+     * @param request HTTP请求对象
+     * @return 置顶结果
+     */
+    @PostMapping("/pin/{emailId}")
+    public ResponseEntity<Map<String, Object>> pinEmail(@PathVariable Long emailId,
+                                                        @RequestParam String pinnedTime,
+                                                        HttpServletRequest request) {
+        try {
+            // 获取当前用户的授权key
+            String authKey = LoginController.getCurrentAuthKey(request);
+            if (authKey == null) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "用户未登录或会话已过期");
+                return ResponseEntity.status(401).body(errorResponse);
+            }
+
+            logger.info("置顶邮箱请求，ID: {}, 置顶时间: {}, 授权key: {}", emailId, pinnedTime, authKey);
+
+            // 解析置顶时间
+            LocalDateTime pinnedDateTime = LocalDateTime.parse(pinnedTime);
+
+            boolean success = tempEmailService.pinEmail(emailId, pinnedDateTime);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", success);
+
+            if (success) {
+                response.put("message", "邮箱置顶成功");
+                logger.info("成功置顶邮箱，ID: {}", emailId);
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("message", "邮箱置顶失败，邮箱不存在");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            logger.error("置顶邮箱失败: {}", e.getMessage(), e);
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "置顶邮箱失败: " + e.getMessage());
+
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    /**
+     * 取消置顶邮箱
+     *
+     * @param emailId 邮箱ID
+     * @param request HTTP请求对象
+     * @return 取消置顶结果
+     */
+    @PostMapping("/unpin/{emailId}")
+    public ResponseEntity<Map<String, Object>> unpinEmail(@PathVariable Long emailId,
+                                                          HttpServletRequest request) {
+        try {
+            // 获取当前用户的授权key
+            String authKey = LoginController.getCurrentAuthKey(request);
+            if (authKey == null) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "用户未登录或会话已过期");
+                return ResponseEntity.status(401).body(errorResponse);
+            }
+
+            logger.info("取消置顶邮箱请求，ID: {}, 授权key: {}", emailId, authKey);
+
+            boolean success = tempEmailService.unpinEmail(emailId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", success);
+
+            if (success) {
+                response.put("message", "取消置顶成功");
+                logger.info("成功取消置顶邮箱，ID: {}", emailId);
+                return ResponseEntity.ok(response);
+            } else {
+                response.put("message", "取消置顶失败，邮箱不存在");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            logger.error("取消置顶邮箱失败: {}", e.getMessage(), e);
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "取消置顶邮箱失败: " + e.getMessage());
 
             return ResponseEntity.status(500).body(errorResponse);
         }

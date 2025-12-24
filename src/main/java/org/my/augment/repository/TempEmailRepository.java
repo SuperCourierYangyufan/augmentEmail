@@ -42,21 +42,26 @@ public interface TempEmailRepository extends JpaRepository<TempEmail, Long> {
 
     /**
      * 查询所有邮箱（包括封禁的）
-     * 按创建时间降序排序（新的在前面）
+     * 按置顶状态和时间排序：置顶的在前，置顶时间越小越靠前，未置顶的按创建时间降序
      *
-     * @return 邮箱列表，按创建时间降序排列
+     * @return 邮箱列表，按置顶状态和时间排序
      */
-    @Query("SELECT t FROM TempEmail t ORDER BY t.createTime DESC")
+    @Query("SELECT t FROM TempEmail t ORDER BY t.isPinned DESC, " +
+           "CASE WHEN t.isPinned = true THEN t.pinnedTime ELSE NULL END ASC, " +
+           "t.createTime DESC")
     List<TempEmail> findAllEmailsOrderByCreateTimeDesc();
 
     /**
      * 查询指定授权key的所有正常状态邮箱（不包括封禁的）
-     * 按创建时间降序排序（新的在前面）
+     * 按置顶状态和时间排序：置顶的在前，置顶时间越小越靠前，未置顶的按创建时间降序
      *
      * @param authKey 授权密钥
-     * @return 邮箱列表，按创建时间降序排列
+     * @return 邮箱列表，按置顶状态和时间排序
      */
-    @Query("SELECT t FROM TempEmail t WHERE t.authKey = :authKey AND t.status = 'ACTIVE' ORDER BY t.createTime DESC")
+    @Query("SELECT t FROM TempEmail t WHERE t.authKey = :authKey AND t.status = 'ACTIVE' " +
+           "ORDER BY t.isPinned DESC, " +
+           "CASE WHEN t.isPinned = true THEN t.pinnedTime ELSE NULL END ASC, " +
+           "t.createTime DESC")
     List<TempEmail> findAllEmailsByAuthKeyOrderByCreateTimeDesc(@Param("authKey") String authKey);
 
     /**

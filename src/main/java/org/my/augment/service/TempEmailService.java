@@ -210,6 +210,10 @@ public class TempEmailService {
         emailMap.put("generatedHours", generatedHours);
         emailMap.put("generatedDays", generatedDays);
 
+        // 添加置顶信息
+        emailMap.put("isPinned", email.getIsPinned() != null ? email.getIsPinned() : false);
+        emailMap.put("pinnedTime", email.getPinnedTime());
+
         return emailMap;
     }
 
@@ -433,6 +437,55 @@ public class TempEmailService {
 
         tempEmailRepository.deleteById(emailId);
         logger.info("成功删除邮箱记录, ID: {}", emailId);
+        return true;
+    }
+
+    /**
+     * 置顶邮箱
+     * 
+     * @param emailId 邮箱ID
+     * @param pinnedTime 置顶时间
+     * @return 是否置顶成功
+     */
+    public boolean pinEmail(Long emailId, LocalDateTime pinnedTime) {
+        logger.info("开始置顶邮箱, ID: {}, 置顶时间: {}", emailId, pinnedTime);
+
+        Optional<TempEmail> emailOpt = tempEmailRepository.findById(emailId);
+        if (!emailOpt.isPresent()) {
+            logger.warn("邮箱不存在, ID: {}", emailId);
+            return false;
+        }
+
+        TempEmail email = emailOpt.get();
+        email.setIsPinned(true);
+        email.setPinnedTime(pinnedTime);
+        tempEmailRepository.save(email);
+        
+        logger.info("成功置顶邮箱: {}, ID: {}, 置顶时间: {}", email.getEmailAddress(), emailId, pinnedTime);
+        return true;
+    }
+
+    /**
+     * 取消置顶邮箱
+     * 
+     * @param emailId 邮箱ID
+     * @return 是否取消成功
+     */
+    public boolean unpinEmail(Long emailId) {
+        logger.info("开始取消置顶邮箱, ID: {}", emailId);
+
+        Optional<TempEmail> emailOpt = tempEmailRepository.findById(emailId);
+        if (!emailOpt.isPresent()) {
+            logger.warn("邮箱不存在, ID: {}", emailId);
+            return false;
+        }
+
+        TempEmail email = emailOpt.get();
+        email.setIsPinned(false);
+        email.setPinnedTime(null);
+        tempEmailRepository.save(email);
+        
+        logger.info("成功取消置顶邮箱: {}, ID: {}", email.getEmailAddress(), emailId);
         return true;
     }
 

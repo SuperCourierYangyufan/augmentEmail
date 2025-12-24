@@ -42,6 +42,7 @@ public class TempEmail {
      */
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
+    @lombok.Builder.Default
     private EmailStatus status = EmailStatus.ACTIVE;
 
     /**
@@ -65,6 +66,19 @@ public class TempEmail {
      */
     @Column(name = "auth_key", nullable = false, length = 64)
     private String authKey;
+
+    /**
+     * 是否置顶
+     */
+    @Column(name = "is_pinned", nullable = false)
+    @lombok.Builder.Default
+    private Boolean isPinned = false;
+
+    /**
+     * 置顶时间（用于排序，置顶时间越小越靠前）
+     */
+    @Column(name = "pinned_time")
+    private LocalDateTime pinnedTime;
 
     /**
      * 邮箱状态枚举

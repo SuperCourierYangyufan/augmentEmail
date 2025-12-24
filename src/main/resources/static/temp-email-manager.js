@@ -147,6 +147,7 @@ function renderEmailList() {
                         <div class="email-status-badge ${statusClass}">
                             <span class="status-icon">${statusIcon}</span>
                             <span class="status-text">${email.statusDescription}</span>
+                            ${email.isPinned ? '<span style="margin-left: 8px; color: #f59e0b;">📌</span>' : ''}
                         </div>
                         <div class="email-time">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -154,6 +155,7 @@ function renderEmailList() {
                                 <polyline points="12,6 12,12 16,14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                             <span>${generatedText}</span>
+                            ${email.isPinned && email.pinnedTime ? `<span style="margin-left: 8px; color: #f59e0b; font-size: 12px;">置顶至: ${formatPinnedTime(email.pinnedTime)}</span>` : ''}
                         </div>
                     </div>
 
@@ -191,6 +193,26 @@ function renderEmailList() {
                                 <span>获取校验地址</span>
                                 <div class="btn-glow"></div>
                             </button>
+                            ${email.isPinned ? `
+                                <button class="action-btn-modern" onclick="unpinEmail(${email.id})" title="取消置顶" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: 1px solid rgba(245, 158, 11, 0.3); box-shadow: 0 8px 32px rgba(245, 158, 11, 0.3);">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M9 12L12 15L22 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M21 12V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    <span>取消置顶</span>
+                                    <div class="btn-glow"></div>
+                                </button>
+                            ` : `
+                                <button class="action-btn-modern" onclick="showPinTimeModal(${email.id})" title="置顶邮箱" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); border: 1px solid rgba(139, 92, 246, 0.3); box-shadow: 0 8px 32px rgba(139, 92, 246, 0.3);">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M9 11H15L13 13L15 15H9L11 13L9 11Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M12 2L12 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M12 16L12 22" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                    <span>置顶</span>
+                                    <div class="btn-glow"></div>
+                                </button>
+                            `}
                             <button class="action-btn-modern btn-delete-modern" onclick="deleteAllEmails('${email.emailAddress}')" title="删除所有邮件">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <polyline points="3,6 5,6 21,6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1536,14 +1558,150 @@ function sanitizeHtml(html) {
     return out;
 }
 
+// 置顶功能相关变量
+let currentPinEmailId = null;
+
+/**
+ * 格式化置顶时间显示
+ */
+function formatPinnedTime(pinnedTime) {
+    if (!pinnedTime) return '';
+    const date = new Date(pinnedTime);
+    const now = new Date();
+    const diffMs = date.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) {
+        return '已过期';
+    } else if (diffDays === 0) {
+        return '今天到期';
+    } else if (diffDays === 1) {
+        return '明天到期';
+    } else {
+        return `${diffDays}天后到期`;
+    }
+}
+
+/**
+ * 显示置顶时间选择模态框
+ */
+function showPinTimeModal(emailId) {
+    currentPinEmailId = emailId;
+    
+    // 设置默认时间为7天后
+    const defaultTime = new Date();
+    defaultTime.setDate(defaultTime.getDate() + 7);
+    const timeString = defaultTime.toISOString().slice(0, 16);
+    
+    document.getElementById('pinnedTimeInput').value = timeString;
+    document.getElementById('pinTimeModal').style.display = 'block';
+}
+
+/**
+ * 隐藏置顶时间选择模态框
+ */
+function hidePinTimeModal() {
+    document.getElementById('pinTimeModal').style.display = 'none';
+    currentPinEmailId = null;
+}
+
+/**
+ * 确认置顶邮箱
+ */
+async function confirmPinEmail() {
+    if (!currentPinEmailId) {
+        showError('未选择邮箱');
+        return;
+    }
+    
+    const pinnedTimeInput = document.getElementById('pinnedTimeInput');
+    const pinnedTime = pinnedTimeInput.value;
+    
+    if (!pinnedTime) {
+        showError('请选择置顶时间');
+        return;
+    }
+    
+    // 验证时间不能是过去时间
+    const selectedTime = new Date(pinnedTime);
+    const now = new Date();
+    if (selectedTime <= now) {
+        showError('置顶时间不能是过去时间');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/temp-email/pin/${currentPinEmailId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `pinnedTime=${encodeURIComponent(pinnedTime)}`
+        });
+        
+        if (handleUnauthorizedResponse(response)) {
+            return;
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showSuccess('邮箱置顶成功');
+            hidePinTimeModal();
+            loadEmailList(); // 刷新列表
+        } else {
+            showError('置顶失败: ' + result.message);
+        }
+    } catch (error) {
+        console.error('置顶邮箱异常:', error);
+        showError('网络错误，请检查连接');
+    }
+}
+
+/**
+ * 取消置顶邮箱
+ */
+async function unpinEmail(emailId) {
+    if (!confirm('确定要取消置顶这个邮箱吗？')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/api/temp-email/unpin/${emailId}`, {
+            method: 'POST'
+        });
+        
+        if (handleUnauthorizedResponse(response)) {
+            return;
+        }
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            showSuccess('取消置顶成功');
+            loadEmailList(); // 刷新列表
+        } else {
+            showError('取消置顶失败: ' + result.message);
+        }
+    } catch (error) {
+        console.error('取消置顶异常:', error);
+        showError('网络错误，请检查连接');
+    }
+}
+
 // 点击模态外部关闭支持
 window.onclick = function(event) {
     const verificationModal = document.getElementById('verificationModal');
     const emailContentModal = document.getElementById('emailContentModal');
+    const pinTimeModal = document.getElementById('pinTimeModal');
+    
     if (event.target === verificationModal) {
         hideVerificationModal();
     }
     if (event.target === emailContentModal) {
         hideEmailContentModal();
+    }
+    if (event.target === pinTimeModal) {
+        hidePinTimeModal();
     }
 }

@@ -1467,6 +1467,24 @@
         </div>
     </div>
 
+    <!-- 置顶时间选择模态框 -->
+    <div id="pinTimeModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">设置置顶时间</h2>
+                <p style="color: #666; font-size: 0.9rem;">选择置顶到期时间，时间越早越靠前</p>
+            </div>
+            <div class="form-group">
+                <label class="form-label">置顶到期时间</label>
+                <input type="datetime-local" id="pinnedTimeInput" class="form-input" />
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary" onclick="confirmPinEmail()">确认置顶</button>
+                <button class="btn" onclick="hidePinTimeModal()" style="background: #e9ecef; color: #666;">取消</button>
+            </div>
+        </div>
+    </div>
+
     <script src="temp-email-manager.js"></script>
 </body>
 </html>
