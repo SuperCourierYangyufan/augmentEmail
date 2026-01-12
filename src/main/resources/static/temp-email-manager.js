@@ -1322,7 +1322,7 @@ document.addEventListener('click', function(event) {
 // ==================== 超级管理员功能 ====================
 
 /**
- * 检查超级管理员状态并显示公告管理按钮
+ * 检查超级管理员状态并显示公告管理按钮和邀请管理按钮
  */
 async function checkSuperAdminStatus() {
     try {
@@ -1330,16 +1330,24 @@ async function checkSuperAdminStatus() {
         const result = await response.json();
 
         if (result.loggedIn && result.remainingCount === -1) {
-            // 是超级管理员，显示公告管理按钮
+            // 是超级管理员，显示公告管理按钮和邀请管理按钮
             const announcementBtn = document.getElementById('announcementManageBtn');
             if (announcementBtn) {
                 announcementBtn.style.display = 'inline-flex';
             }
+            const inviteBtn = document.getElementById('inviteManageBtn');
+            if (inviteBtn) {
+                inviteBtn.style.display = 'inline-flex';
+            }
         } else {
-            // 不是超级管理员，隐藏公告管理按钮
+            // 不是超级管理员，隐藏公告管理按钮和邀请管理按钮
             const announcementBtn = document.getElementById('announcementManageBtn');
             if (announcementBtn) {
                 announcementBtn.style.display = 'none';
+            }
+            const inviteBtn = document.getElementById('inviteManageBtn');
+            if (inviteBtn) {
+                inviteBtn.style.display = 'none';
             }
         }
     } catch (error) {
@@ -1348,6 +1356,10 @@ async function checkSuperAdminStatus() {
         const announcementBtn = document.getElementById('announcementManageBtn');
         if (announcementBtn) {
             announcementBtn.style.display = 'none';
+        }
+        const inviteBtn = document.getElementById('inviteManageBtn');
+        if (inviteBtn) {
+            inviteBtn.style.display = 'none';
         }
     }
 }
@@ -1363,6 +1375,20 @@ function goToAnnouncementManage() {
     }).catch(error => {
         console.error('权限验证失败:', error);
         showNotification('权限验证失败，无法访问公告管理', 'error');
+    });
+}
+
+/**
+ * 跳转到邀请管理页面
+ */
+function goToInviteManage() {
+    // 先验证超级管理员权限
+    checkSuperAdminStatus().then(() => {
+        // 跳转到邀请管理页面
+        window.location.href = '/invite-admin.html';
+    }).catch(error => {
+        console.error('权限验证失败:', error);
+        showNotification('权限验证失败，无法访问邀请管理', 'error');
     });
 }
 

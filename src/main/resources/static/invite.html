@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google 邀请申请</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 背景装饰 */
+        body::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(66, 133, 244, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(234, 67, 53, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(251, 188, 5, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 60% 60%, rgba(52, 168, 83, 0.08) 0%, transparent 50%);
+            animation: bgFloat 20s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes bgFloat {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-2%, 2%) rotate(1deg); }
+            50% { transform: translate(2%, -2%) rotate(-1deg); }
+            75% { transform: translate(-1%, -1%) rotate(0.5deg); }
+        }
+
+        .container {
+            background: white;
+            border-radius: 28px;
+            padding: 48px;
+            max-width: 480px;
+            width: 100%;
+            box-shadow:
+                0 1px 3px rgba(0, 0, 0, 0.08),
+                0 8px 24px rgba(0, 0, 0, 0.08),
+                0 24px 48px rgba(0, 0, 0, 0.04);
+            animation: containerIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        @keyframes containerIn {
+            from {
+                opacity: 0;
+                transform: translateY(24px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .logo-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 16px;
+            position: relative;
+        }
+
+        .logo-icon::before {
+            content: 'G';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 32px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #4285f4 0%, #ea4335 25%, #fbbc05 50%, #34a853 75%, #4285f4 100%);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: logoGradient 3s ease infinite;
+        }
+
+        @keyframes logoGradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 500;
+            color: #202124;
+            letter-spacing: -0.5px;
+        }
+
+        .title {
+            text-align: center;
+            margin-bottom: 8px;
+            color: #202124;
+            font-size: 1.375rem;
+            font-weight: 500;
+            letter-spacing: -0.3px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #5f6368;
+            margin-bottom: 32px;
+            font-size: 0.9375rem;
+            line-height: 1.5;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #202124;
+            font-size: 0.875rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px;
+            border: 1px solid #dadce0;
+            border-radius: 12px;
+            font-size: 1rem;
+            color: #202124;
+            background: #fff;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+        }
+
+        .form-input:hover {
+            border-color: #bdc1c6;
+        }
+
+        .form-input:focus {
+            border-color: #4285f4;
+            box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.2);
+        }
+
+        .form-input::placeholder {
+            color: #80868b;
+        }
+
+        .form-input:disabled {
+            background: #f8f9fa;
+            color: #80868b;
+            cursor: not-allowed;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 24px;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #4285f4;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #3367d6;
+            box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3);
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .btn-primary:disabled {
+            background: #a8c7fa;
+            cursor: not-allowed;
+        }
+
+        /* 状态卡片样式 */
+        .status-card {
+            padding: 32px 24px;
+            border-radius: 16px;
+            text-align: center;
+            margin-bottom: 28px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .status-pending {
+            background: linear-gradient(135deg, #fff8e1 0%, #fff3e0 100%);
+        }
+        .status-pending::before {
+            background: linear-gradient(90deg, #ff9800, #ffb74d);
+        }
+
+        .status-submitted {
+            background: linear-gradient(135deg, #e3f2fd 0%, #e8f4fd 100%);
+        }
+        .status-submitted::before {
+            background: linear-gradient(90deg, #2196f3, #64b5f6);
+        }
+
+        .status-invited {
+            background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+        }
+        .status-invited::before {
+            background: linear-gradient(90deg, #4caf50, #81c784);
+        }
+
+        .status-cancelled {
+            background: linear-gradient(135deg, #ffebee 0%, #fce4ec 100%);
+        }
+        .status-cancelled::before {
+            background: linear-gradient(90deg, #f44336, #e57373);
+        }
+
+        .status-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .status-card h3 {
+            color: #202124;
+            font-size: 1.25rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .status-card p {
+            color: #5f6368;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .email-display {
+            background: rgba(0, 0, 0, 0.04);
+            padding: 14px 18px;
+            border-radius: 10px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9375rem;
+            color: #202124;
+            margin-top: 16px;
+            word-break: break-all;
+            display: inline-block;
+        }
+
+        .reject-reason {
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: rgba(244, 67, 54, 0.08);
+            border-radius: 8px;
+            color: #c62828;
+            font-size: 0.875rem;
+        }
+
+        .reject-reason strong {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 48px 24px;
+        }
+
+        .error-message h3 {
+            color: #5f6368;
+            font-size: 1.125rem;
+            font-weight: 500;
+            margin-top: 8px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 64px 24px;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid #e8eaed;
+            border-top-color: #4285f4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #5f6368;
+            font-size: 0.9375rem;
+        }
+
+        .help-text {
+            color: #5f6368;
+            font-size: 0.8125rem;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e8eaed;
+            margin: 28px 0;
+        }
+
+        /* 响应式 */
+        @media (max-width: 520px) {
+            .container {
+                padding: 36px 24px;
+                border-radius: 20px;
+            }
+
+            .logo-icon {
+                width: 56px;
+                height: 56px;
+            }
+
+            .logo-icon::before {
+                font-size: 28px;
+            }
+
+            .title {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <div class="logo-icon"></div>
+            <span class="logo-text">Google 邀请</span>
+        </div>
+
+        <div id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <div class="loading-text">正在加载...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 从 URL 获取邀请码
+        const pathParts = window.location.pathname.split('/');
+        const inviteCode = pathParts[pathParts.length - 1];
+
+        let currentStatus = null;
+        let currentEmail = null;
+
+        // 页面加载时检查邀请码
+        document.addEventListener('DOMContentLoaded', () => {
+            checkInviteCode();
+        });
+
+        // 校验邀请码
+        async function checkInviteCode() {
+            try {
+                const response = await fetch(`/api/invite/check/${inviteCode}`);
+                const result = await response.json();
+
+                if (!result.success || !result.data.valid) {
+                    showError('邀请链接无效或已过期');
+                    return;
+                }
+
+                currentStatus = result.data.status;
+                currentEmail = result.data.emailAddress;
+
+                renderContent(result.data);
+
+            } catch (error) {
+                console.error('校验失败:', error);
+                showError('网络错误，请稍后重试');
+            }
+        }
+
+        // 渲染页面内容
+        function renderContent(data) {
+            const content = document.getElementById('content');
+
+            if (data.status === 'INVITED') {
+                // 已邀请 - 只读查看
+                content.innerHTML = `
+                    <div class="status-card status-invited">
+                        <span class="status-icon">✅</span>
+                        <h3>邀请已完成</h3>
+                        <p>您的邮箱已成功收到邀请</p>
+                        <div class="email-display">${escapeHtml(data.emailAddress)}</div>
+                    </div>
+                    <p style="text-align: center; color: #5f6368; font-size: 0.875rem;">
+                        请前往您的邮箱查收邀请邮件
+                    </p>
+                `;
+            } else if (data.status === 'CANCELLED') {
+                // 已取消（理论上不会出现，因为驳回后变成PENDING）
+                content.innerHTML = `
+                    <div class="status-card status-cancelled">
+                        <span class="status-icon">❌</span>
+                        <h3>邀请已取消</h3>
+                        <p>此邀请链接已失效</p>
+                    </div>
+                `;
+            } else if (data.status === 'SUBMITTED') {
+                // 待邀请 - 可修改
+                content.innerHTML = `
+                    <div class="status-card status-submitted">
+                        <span class="status-icon">⏳</span>
+                        <h3>等待邀请中</h3>
+                        <p>您的邮箱正在排队等待邀请</p>
+                        <div class="email-display">${escapeHtml(data.emailAddress)}</div>
+                    </div>
+                    <div class="divider"></div>
+                    <h2 class="title">修改邮箱</h2>
+                    <p class="subtitle">如需更换邮箱地址，请在下方填写</p>
+                    <div class="form-group">
+                        <label class="form-label">邮箱地址</label>
+                        <input type="email" id="emailInput" class="form-input"
+                               value="${escapeHtml(data.emailAddress || '')}"
+                               placeholder="请输入您的邮箱地址">
+                        <p class="help-text">请确保邮箱地址正确无误，邀请将发送至此邮箱</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="submitEmail()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                        </svg>
+                        更新邮箱
+                    </button>
+                `;
+            } else {
+                // PENDING - 待填写（可能是被驳回后的状态）
+                let rejectHtml = '';
+                if (data.rejectReason) {
+                    rejectHtml = `
+                        <div class="status-card status-cancelled" style="margin-bottom: 24px;">
+                            <span class="status-icon">⚠️</span>
+                            <h3>申请被驳回</h3>
+                            <p>请根据以下原因修改后重新提交</p>
+                            <div class="reject-reason">
+                                <strong>驳回原因</strong>
+                                ${escapeHtml(data.rejectReason)}
+                            </div>
+                        </div>
+                    `;
+                }
+                content.innerHTML = `
+                    ${rejectHtml}
+                    <h2 class="title">${data.rejectReason ? '重新申请' : '申请 Google 邀请'}</h2>
+                    <p class="subtitle">请填写您的邮箱地址，我们将向该邮箱发送邀请</p>
+                    <div class="form-group">
+                        <label class="form-label">邮箱地址</label>
+                        <input type="email" id="emailInput" class="form-input"
+                               placeholder="example@gmail.com" autofocus>
+                        <p class="help-text">请确保邮箱地址正确无误，邀请将发送至此邮箱</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="submitEmail()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                        </svg>
+                        ${data.rejectReason ? '重新提交' : '提交申请'}
+                    </button>
+                `;
+            }
+        }
+
+        // 提交/更新邮箱
+        async function submitEmail() {
+            const emailInput = document.getElementById('emailInput');
+            const email = emailInput.value.trim();
+
+            if (!email) {
+                alert('请输入邮箱地址');
+                emailInput.focus();
+                return;
+            }
+
+            // 简单的邮箱格式校验
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert('请输入正确的邮箱格式');
+                emailInput.focus();
+                return;
+            }
+
+            const btn = document.querySelector('.btn-primary');
+            const originalContent = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `
+                <div class="spinner" style="width:18px;height:18px;border-width:2px;margin:0"></div>
+                提交中...
+            `;
+
+            try {
+                const isUpdate = currentStatus === 'SUBMITTED';
+                const url = isUpdate
+                    ? `/api/invite/update/${inviteCode}`
+                    : `/api/invite/submit/${inviteCode}`;
+                const method = isUpdate ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ emailAddress: email })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert(result.message || '提交成功');
+                    checkInviteCode(); // 刷新页面状态
+                } else {
+                    alert(result.message || '提交失败');
+                    btn.disabled = false;
+                    btn.innerHTML = originalContent;
+                }
+
+            } catch (error) {
+                console.error('提交失败:', error);
+                alert('网络错误，请稍后重试');
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+            }
+        }
+
+        // 显示错误
+        function showError(message) {
+            const content = document.getElementById('content');
+            content.innerHTML = `
+                <div class="error-message">
+                    <span style="font-size: 64px;">😕</span>
+                    <h3>${escapeHtml(message)}</h3>
+                </div>
+            `;
+        }
+
+        // HTML转义函数
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

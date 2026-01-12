@@ -59,6 +59,14 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/announcements/public",
                         "/api/announcements/sidebar",
 
+                        // 邀请相关公开接口和页面
+                        "/invite/**",
+                        "/invite.html",
+                        "/api/invite/generate",
+                        "/api/invite/check/**",
+                        "/api/invite/submit/**",
+                        "/api/invite/update/**",
+
                         // 静态资源
                         "/css/**",
                         "/js/**",
@@ -85,7 +93,22 @@ public class WebConfig implements WebMvcConfigurer {
                         "/announcement-admin.html",
                         "/announcement-admin",
                         "/announcement-edit.html",
-                        "/announcement-edit"
+                        "/announcement-edit",
+
+                        // 邀请管理相关接口和页面（需要超级管理员权限）
+                        "/api/invite/list",
+                        "/api/invite/*/confirm",
+                        "/api/invite/*/reject",
+                        "/api/invite/*",
+                        "/invite-admin.html",
+                        "/invite-admin"
+                )
+                .excludePathPatterns(
+                        // 邀请公开接口（不需要超级管理员权限）
+                        "/api/invite/generate",
+                        "/api/invite/check/**",
+                        "/api/invite/submit/**",
+                        "/api/invite/update/**"
                 )
                 .order(1); // 设置更高的优先级
 

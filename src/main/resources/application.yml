@@ -37,5 +37,9 @@ logging:
 app:
   # 超级授权key配置
   super-auth-key: yangyufan199691
+  # 邀请功能配置
+  invite:
+    # 邀请链接域名（生产环境应配置为实际域名）
+    domain: http://localhost:8081
 
 
