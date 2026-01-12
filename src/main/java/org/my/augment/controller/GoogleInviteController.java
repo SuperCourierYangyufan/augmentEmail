@@ -33,7 +33,7 @@ public class GoogleInviteController {
      *
      * @return 完整的邀请链接
      */
-    @PostMapping("/generate")
+    @RequestMapping("/generate")
     public ResponseEntity<Map<String, Object>> generateInviteLink() {
         logger.info("生成邀请链接请求");
 
