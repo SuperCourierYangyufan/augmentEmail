@@ -64,6 +64,7 @@ function renderInviteList(invites) {
                 <tr>
                     <th>ID</th>
                     <th>邀请码</th>
+                    <th>订单号</th>
                     <th>邮箱地址</th>
                     <th>状态</th>
                     <th>驳回原因</th>
@@ -86,6 +87,7 @@ function renderInviteList(invites) {
                     <code class="invite-code">${escapeHtml(invite.inviteCode)}</code>
                     <button class="copy-btn" onclick="copyInviteLink('${invite.inviteCode}')" title="复制邀请链接">📋</button>
                 </td>
+                <td>${invite.orderNumber ? '<span class="order-number">' + escapeHtml(invite.orderNumber) + '</span>' : '<span style="color:#999">未填写</span>'}</td>
                 <td class="email-cell">${invite.emailAddress ? escapeHtml(invite.emailAddress) : '<span style="color:#999">未填写</span>'}</td>
                 <td><span class="status-badge ${statusClass}">${statusText}</span></td>
                 <td class="reason-cell">${invite.rejectReason ? escapeHtml(invite.rejectReason) : '<span style="color:#999">-</span>'}</td>
@@ -323,4 +325,199 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// ==================== Q&A 管理功能 ====================
+
+// 显示 Q&A 管理模态框
+function showQAManager() {
+    document.getElementById('qaModal').style.display = 'flex';
+    loadQAList();
+}
+
+// 隐藏 Q&A 模态框
+function hideQAModal() {
+    document.getElementById('qaModal').style.display = 'none';
+}
+
+// 加载 Q&A 列表
+async function loadQAList() {
+    const container = document.getElementById('qaListContainer');
+    container.innerHTML = `
+        <div class="loading">
+            <div class="spinner"></div>
+            <div>加载中...</div>
+        </div>
+    `;
+
+    try {
+        const response = await fetch('/api/invite/qa/list');
+        const result = await response.json();
+
+        if (result.success) {
+            renderQAList(result.data);
+        } else {
+            container.innerHTML = `<p style="text-align:center;color:#999;">加载失败: ${escapeHtml(result.message)}</p>`;
+        }
+    } catch (error) {
+        console.error('加载 Q&A 失败:', error);
+        container.innerHTML = `<p style="text-align:center;color:#999;">网络错误，请稍后重试</p>`;
+    }
+}
+
+// 渲染 Q&A 列表
+function renderQAList(qaList) {
+    const container = document.getElementById('qaListContainer');
+
+    if (!qaList || qaList.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #999;">
+                <div style="font-size: 3rem; margin-bottom: 15px;">📝</div>
+                <p>暂无 Q&A 记录</p>
+                <p style="margin-top: 8px; font-size: 0.875rem;">点击上方 "添加 Q&A" 创建第一条问答</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = '<div class="qa-list">';
+    qaList.forEach(qa => {
+        html += `
+            <div class="qa-item ${qa.enabled ? '' : 'disabled'}">
+                <div class="qa-question">Q: ${escapeHtml(qa.question)}</div>
+                <div class="qa-answer">A: ${escapeHtml(qa.answer)}</div>
+                <div class="qa-meta">
+                    <span>排序: ${qa.sortOrder} | ${qa.enabled ? '✅ 启用中' : '⏸️ 已禁用'}</span>
+                    <span>${qa.createTime ? qa.createTime.substring(0, 10) : ''}</span>
+                </div>
+                <div class="qa-actions">
+                    <button class="btn btn-primary btn-sm" onclick="showEditQAForm(${qa.id}, '${escapeHtml(qa.question).replace(/'/g, "\\'")}', '${escapeHtml(qa.answer).replace(/'/g, "\\'")}')">
+                        ✏️ 编辑
+                    </button>
+                    <button class="btn btn-${qa.enabled ? 'warning' : 'success'} btn-sm" onclick="toggleQA(${qa.id})">
+                        ${qa.enabled ? '⏸️ 禁用' : '▶️ 启用'}
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteQA(${qa.id})">
+                        🗑️ 删除
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// 显示添加 Q&A 表单
+function showAddQAForm() {
+    document.getElementById('qaEditTitle').textContent = '添加 Q&A';
+    document.getElementById('qaEditId').value = '';
+    document.getElementById('qaQuestionInput').value = '';
+    document.getElementById('qaAnswerInput').value = '';
+    document.getElementById('qaEditModal').style.display = 'flex';
+}
+
+// 显示编辑 Q&A 表单
+function showEditQAForm(id, question, answer) {
+    document.getElementById('qaEditTitle').textContent = '编辑 Q&A';
+    document.getElementById('qaEditId').value = id;
+    document.getElementById('qaQuestionInput').value = question;
+    document.getElementById('qaAnswerInput').value = answer;
+    document.getElementById('qaEditModal').style.display = 'flex';
+}
+
+// 隐藏 Q&A 编辑模态框
+function hideQAEditModal() {
+    document.getElementById('qaEditModal').style.display = 'none';
+}
+
+// 保存 Q&A
+async function saveQA() {
+    const id = document.getElementById('qaEditId').value;
+    const question = document.getElementById('qaQuestionInput').value.trim();
+    const answer = document.getElementById('qaAnswerInput').value.trim();
+
+    if (!question) {
+        alert('请输入问题');
+        return;
+    }
+    if (!answer) {
+        alert('请输入答案');
+        return;
+    }
+
+    try {
+        let response;
+        if (id) {
+            // 更新
+            response = await fetch(`/api/invite/qa/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question, answer })
+            });
+        } else {
+            // 添加
+            response = await fetch('/api/invite/qa/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question, answer })
+            });
+        }
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert(id ? '更新成功' : '添加成功');
+            hideQAEditModal();
+            loadQAList();
+        } else {
+            alert('操作失败: ' + result.message);
+        }
+    } catch (error) {
+        console.error('保存 Q&A 失败:', error);
+        alert('网络错误，请稍后重试');
+    }
+}
+
+// 切换 Q&A 启用状态
+async function toggleQA(id) {
+    try {
+        const response = await fetch(`/api/invite/qa/${id}/toggle`, {
+            method: 'POST'
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            loadQAList();
+        } else {
+            alert('操作失败: ' + result.message);
+        }
+    } catch (error) {
+        console.error('切换 Q&A 状态失败:', error);
+        alert('网络错误，请稍后重试');
+    }
+}
+
+// 删除 Q&A
+async function deleteQA(id) {
+    if (!confirm('确认删除该 Q&A？此操作不可恢复！')) return;
+
+    try {
+        const response = await fetch(`/api/invite/qa/${id}`, {
+            method: 'DELETE'
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert('删除成功');
+            loadQAList();
+        } else {
+            alert('删除失败: ' + result.message);
+        }
+    } catch (error) {
+        console.error('删除 Q&A 失败:', error);
+        alert('网络错误，请稍后重试');
+    }
 }

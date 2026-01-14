@@ -162,6 +162,109 @@ public class GoogleInviteController {
     }
 
     /**
+     * 提交订单号和邮箱信息（新接口）
+     * 无需认证
+     *
+     * @param code 邀请码
+     * @param requestBody 请求体（包含orderNumber和emailAddress）
+     * @return 提交结果
+     */
+    @PostMapping("/submitOrder/{code}")
+    public ResponseEntity<Map<String, Object>> submitOrderAndEmail(
+            @PathVariable String code,
+            @RequestBody Map<String, String> requestBody) {
+
+        String orderNumber = requestBody.get("orderNumber");
+        String emailAddress = requestBody.get("emailAddress");
+        logger.info("提交订单，邀请码: {}, 订单号: {}, 邮箱: {}", code, orderNumber, emailAddress);
+
+        try {
+            Map<String, Object> result = googleInviteService.submitOrderAndEmail(code, orderNumber, emailAddress);
+
+            if ((Boolean) result.get("success")) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.badRequest().body(result);
+            }
+
+        } catch (Exception e) {
+            logger.error("提交订单失败: {}", e.getMessage(), e);
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "提交失败: " + e.getMessage());
+
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    /**
+     * 直接申请邀请（无需邀请码）
+     * 无需认证
+     *
+     * @param requestBody 请求体（包含orderNumber和emailAddress）
+     * @return 申请结果
+     */
+    @PostMapping("/apply")
+    public ResponseEntity<Map<String, Object>> applyDirect(
+            @RequestBody Map<String, String> requestBody) {
+
+        String orderNumber = requestBody.get("orderNumber");
+        String emailAddress = requestBody.get("emailAddress");
+        logger.info("直接申请邀请，订单号: {}, 邮箱: {}", orderNumber, emailAddress);
+
+        try {
+            Map<String, Object> result = googleInviteService.applyDirect(orderNumber, emailAddress);
+
+            if ((Boolean) result.get("success")) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.badRequest().body(result);
+            }
+
+        } catch (Exception e) {
+            logger.error("直接申请失败: {}", e.getMessage(), e);
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "申请失败: " + e.getMessage());
+
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    /**
+     * 根据邮箱查询订单信息
+     * 无需认证
+     *
+     * @param email 邮箱地址
+     * @return 查询结果
+     */
+    @GetMapping("/queryByEmail")
+    public ResponseEntity<Map<String, Object>> queryByEmail(@RequestParam String email) {
+        logger.info("根据邮箱查询订单，邮箱: {}", email);
+
+        try {
+            Map<String, Object> result = googleInviteService.queryByEmail(email);
+
+            if ((Boolean) result.get("success")) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.badRequest().body(result);
+            }
+
+        } catch (Exception e) {
+            logger.error("邮箱查询失败: {}", e.getMessage(), e);
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "查询失败: " + e.getMessage());
+
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    /**
      * 获取邀请列表（管理员）
      * 需要超级管理员权限
      *

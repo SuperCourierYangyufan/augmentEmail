@@ -37,6 +37,12 @@ public class GoogleInvite {
     private String inviteCode;
 
     /**
+     * 订单号（用户填写，作为唯一标识）
+     */
+    @Column(name = "order_number", unique = true, length = 100)
+    private String orderNumber;
+
+    /**
      * 申请人邮箱地址（可为空，表示尚未填写）
      */
     @Column(name = "email_address", length = 255)
@@ -135,9 +141,21 @@ public class GoogleInvite {
     }
 
     /**
-     * 提交邮箱
+     * 提交邮箱（旧方法，保持兼容）
      */
     public void submitEmail(String email) {
+        this.emailAddress = email;
+        this.status = InviteStatus.SUBMITTED;
+        this.fillTime = LocalDateTime.now();
+        // 清除之前的驳回原因
+        this.rejectReason = null;
+    }
+
+    /**
+     * 提交订单号和邮箱
+     */
+    public void submitOrderAndEmail(String orderNumber, String email) {
+        this.orderNumber = orderNumber;
         this.emailAddress = email;
         this.status = InviteStatus.SUBMITTED;
         this.fillTime = LocalDateTime.now();
@@ -159,7 +177,8 @@ public class GoogleInvite {
     public void reject(String reason) {
         this.status = InviteStatus.PENDING;
         this.rejectReason = reason;
-        // 清空之前填写的邮箱，让用户重新填写
+        // 清空之前填写的信息，让用户重新填写
+        this.orderNumber = null;
         this.emailAddress = null;
         this.fillTime = null;
     }

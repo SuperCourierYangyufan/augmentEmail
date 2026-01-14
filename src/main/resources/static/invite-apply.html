@@ -1,0 +1,1238 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#070B18" />
+  <title>Google 邀请申请</title>
+  <style>
+    :root{
+      --bg-0:#050711;
+      --bg-1:#070B18;
+      --bg-2:#071A3A;
+      --ink:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.68);
+      --faint:rgba(255,255,255,.52);
+      --stroke:rgba(255,255,255,.14);
+      --stroke-2:rgba(255,255,255,.22);
+      --glass:rgba(255,255,255,.08);
+      --glass-2:rgba(255,255,255,.12);
+      --shadow:0 24px 80px rgba(0,0,0,.55);
+      --shadow-soft:0 14px 42px rgba(0,0,0,.35);
+      --radius-xl:28px;
+      --radius-lg:20px;
+      --radius-md:14px;
+      --pad:clamp(16px,2.2vw,28px);
+      --max:1120px;
+      --accent-a:#6EE7FF;
+      --accent-b:#A78BFA;
+      --accent-c:#34D399;
+      --danger:#FB7185;
+      --warning:#FBBF24;
+      --ok:#22C55E;
+      --focus:rgba(110,231,255,.55);
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      color:var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height:1.5;
+      background:
+        radial-gradient(1200px 700px at 15% 10%, rgba(167,139,250,.22), transparent 60%),
+        radial-gradient(1000px 700px at 90% 25%, rgba(110,231,255,.18), transparent 62%),
+        radial-gradient(900px 700px at 65% 90%, rgba(52,211,153,.12), transparent 58%),
+        linear-gradient(180deg, var(--bg-1), var(--bg-0));
+      overflow-x:hidden;
+    }
+
+    .bg-grid{
+      position:fixed;
+      inset:-2px;
+      pointer-events:none;
+      opacity:.32;
+      background:
+        linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px) 0 0 / 46px 46px,
+        linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px) 0 0 / 46px 46px;
+      mask-image: radial-gradient(circle at 30% 30%, rgba(0,0,0,1), rgba(0,0,0,.25) 55%, transparent 78%);
+      filter: blur(.2px);
+    }
+
+    .bg-noise{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:.08;
+      background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
+    }
+
+    .bg-orb{
+      position:fixed;
+      width:540px;
+      height:540px;
+      border-radius:999px;
+      filter: blur(26px);
+      opacity:.32;
+      pointer-events:none;
+      transform: translateZ(0);
+      background: radial-gradient(circle at 30% 30%, rgba(110,231,255,.65), transparent 58%);
+      left:-220px;
+      top:14vh;
+      animation: floatA 14s ease-in-out infinite;
+    }
+    .bg-orb.orb-b{
+      width:620px;
+      height:620px;
+      left:62vw;
+      top:54vh;
+      opacity:.22;
+      background: radial-gradient(circle at 40% 40%, rgba(167,139,250,.7), transparent 58%);
+      animation: floatB 18s ease-in-out infinite;
+    }
+
+    @keyframes floatA{
+      0%,100%{ transform: translate3d(0,0,0) scale(1); }
+      45%{ transform: translate3d(36px,-22px,0) scale(1.06); }
+      75%{ transform: translate3d(14px,18px,0) scale(.98); }
+    }
+    @keyframes floatB{
+      0%,100%{ transform: translate3d(0,0,0) scale(1); }
+      35%{ transform: translate3d(-28px,10px,0) scale(1.04); }
+      70%{ transform: translate3d(-12px,-26px,0) scale(.99); }
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .bg-orb{ animation:none; }
+    }
+
+    .wrap{
+      min-height:100%;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding: clamp(22px, 5vh, 56px) 18px 56px;
+      position:relative;
+    }
+
+    .shell{
+      width:min(var(--max), 100%);
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: clamp(18px, 2.6vw, 34px);
+      align-items:start;
+    }
+
+    .glass{
+      background: linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.06));
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-soft);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .glass::before{
+      content:"";
+      position:absolute;
+      inset:-1px;
+      border-radius: inherit;
+      background:
+        radial-gradient(700px 260px at 22% 0%, rgba(110,231,255,.20), transparent 58%),
+        radial-gradient(700px 300px at 85% 10%, rgba(167,139,250,.18), transparent 62%),
+        radial-gradient(700px 320px at 40% 110%, rgba(52,211,153,.10), transparent 60%);
+      opacity:.95;
+      pointer-events:none;
+    }
+
+    @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+      .glass{
+        background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.055));
+        backdrop-filter: blur(22px) saturate(140%);
+        -webkit-backdrop-filter: blur(22px) saturate(140%);
+      }
+    }
+
+    .panel{
+      position:relative;
+      padding: clamp(22px, 2.4vw, 34px);
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom: 18px;
+    }
+
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.82);
+      font-size: 13px;
+      letter-spacing: .3px;
+      user-select:none;
+      white-space:nowrap;
+    }
+
+    .chip-dot{
+      width:10px;
+      height:10px;
+      border-radius:999px;
+      background: radial-gradient(circle at 30% 30%, var(--accent-a), rgba(110,231,255,.25));
+      box-shadow: 0 0 0 6px rgba(110,231,255,.08);
+    }
+
+    .chip small{ opacity:.86; }
+
+    .ghost-link{
+      color: rgba(255,255,255,.75);
+      text-decoration:none;
+      font-size: 13px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+    }
+    .ghost-link:hover{ transform: translateY(-1px); background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.18); }
+    .ghost-link:focus-visible{ outline: 3px solid var(--focus); outline-offset: 3px; }
+
+    .hero h1{
+      margin: 14px 0 10px;
+      font-size: clamp(30px, 3.4vw, 46px);
+      line-height:1.12;
+      letter-spacing: -0.7px;
+    }
+
+    .hero p{
+      margin:0;
+      color: var(--muted);
+      font-size: clamp(15px, 1.25vw, 18px);
+      max-width: 56ch;
+    }
+
+    .meta{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin: 22px 0 18px;
+    }
+    @media (max-width: 520px){
+      .meta{ grid-template-columns: 1fr; }
+    }
+
+    .meta-card{
+      padding: 14px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+    }
+    .meta-card b{
+      display:block;
+      font-size: 13px;
+      color: rgba(255,255,255,.88);
+      margin-bottom: 6px;
+      letter-spacing:.2px;
+    }
+    .meta-card span{
+      display:block;
+      font-size: 13px;
+      color: rgba(255,255,255,.65);
+    }
+
+    .steps{
+      margin: 10px 0 0;
+      padding: 0;
+      list-style:none;
+      display:grid;
+      gap: 10px;
+    }
+
+    .step{
+      display:flex;
+      gap: 12px;
+      align-items:flex-start;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,.13);
+      background: rgba(0,0,0,.14);
+    }
+    .step-num{
+      width: 30px;
+      height: 30px;
+      border-radius: 999px;
+      display:grid;
+      place-items:center;
+      font-weight: 700;
+      font-size: 13px;
+      background: linear-gradient(135deg, rgba(110,231,255,.22), rgba(167,139,250,.18));
+      border: 1px solid rgba(255,255,255,.16);
+      color: rgba(255,255,255,.92);
+      flex: 0 0 auto;
+      box-shadow: 0 10px 26px rgba(0,0,0,.20);
+    }
+    .step strong{
+      display:block;
+      font-size: 13px;
+      margin-bottom: 2px;
+      letter-spacing:.15px;
+    }
+    .step span{
+      display:block;
+      font-size: 13px;
+      color: rgba(255,255,255,.62);
+    }
+
+    /* 邀请码查询 */
+    .query-box{
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(110,231,255,.25);
+      background: rgba(110,231,255,.06);
+    }
+    .query-title{
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255,255,255,.88);
+    }
+    .query-icon{
+      font-size: 16px;
+    }
+    .query-row{
+      display:flex;
+      gap: 10px;
+    }
+    .query-input{
+      flex: 1;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.25);
+      color: rgba(255,255,255,.92);
+      padding: 12px 14px;
+      font-size: 14px;
+      outline:none;
+      transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .query-input:focus{
+      border-color: rgba(110,231,255,.45);
+      box-shadow: 0 0 0 3px rgba(110,231,255,.12);
+    }
+    .query-input::placeholder{
+      color: rgba(255,255,255,.45);
+    }
+    .query-btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap: 8px;
+      padding: 12px 20px;
+      border-radius: 12px;
+      border: 1px solid rgba(110,231,255,.35);
+      background: linear-gradient(135deg, rgba(110,231,255,.18), rgba(110,231,255,.08));
+      color: rgba(110,231,255,.95);
+      font-size: 14px;
+      font-weight: 600;
+      cursor:pointer;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+    }
+    .query-btn:hover{
+      transform: translateY(-1px);
+      background: linear-gradient(135deg, rgba(110,231,255,.25), rgba(110,231,255,.12));
+      border-color: rgba(110,231,255,.5);
+    }
+    .query-btn:disabled{
+      opacity: .6;
+      cursor: not-allowed;
+    }
+    .query-btn.loading .query-spinner{ display:inline-block; }
+    .query-btn.loading .query-btn-text{ opacity:.7; }
+    .query-spinner{ display:none; width:14px; height:14px; }
+    .query-result{
+      margin-top: 12px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .query-result.success{
+      background: rgba(34,197,94,.12);
+      border: 1px solid rgba(34,197,94,.25);
+      color: rgba(34,197,94,.95);
+    }
+    .query-result.error{
+      background: rgba(251,113,133,.12);
+      border: 1px solid rgba(251,113,133,.25);
+      color: rgba(251,113,133,.95);
+    }
+    .query-result .result-row{
+      display:flex;
+      justify-content:space-between;
+      padding: 4px 0;
+    }
+    .query-result .result-label{
+      color: rgba(255,255,255,.65);
+    }
+    .query-result .result-value{
+      color: rgba(255,255,255,.92);
+      font-weight: 500;
+    }
+
+    /* Q&A */
+    .qa{
+      margin-top: 18px;
+      border-top: 1px solid rgba(255,255,255,.10);
+      padding-top: 18px;
+    }
+    .qa-head{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap: 14px;
+      margin-bottom: 10px;
+    }
+    .qa-head h2{
+      margin:0;
+      font-size: 14px;
+      letter-spacing: .24em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.78);
+    }
+    .qa-head button{
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      color: rgba(255,255,255,.8);
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor:pointer;
+      font-size: 13px;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
+    }
+    .qa-head button:hover{ transform: translateY(-1px); background: rgba(255,255,255,.07); border-color: rgba(255,255,255,.20); }
+    .qa-head button:focus-visible{ outline: 3px solid var(--focus); outline-offset: 3px; }
+
+    .qa-list{
+      display:grid;
+      gap: 10px;
+    }
+    .qa-item{
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.05);
+      overflow:hidden;
+    }
+    .qa-item summary{
+      list-style:none;
+      cursor:pointer;
+      padding: 14px 14px;
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      color: rgba(255,255,255,.88);
+      outline:none;
+      user-select:none;
+    }
+    .qa-item summary::-webkit-details-marker{ display:none; }
+    .qa-q{
+      width: 22px;
+      height: 22px;
+      border-radius: 8px;
+      display:grid;
+      place-items:center;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing:.02em;
+      background: rgba(110,231,255,.14);
+      border: 1px solid rgba(110,231,255,.22);
+      color: rgba(110,231,255,.92);
+      flex: 0 0 auto;
+    }
+    .qa-txt{
+      flex:1 1 auto;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .qa-a{
+      border-top: 1px solid rgba(255,255,255,.10);
+      padding: 14px 14px 14px 46px;
+      color: rgba(255,255,255,.68);
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .qa-skeleton{
+      display:grid;
+      gap: 10px;
+    }
+    .sk{
+      height: 44px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,.10);
+      background: linear-gradient(90deg, rgba(255,255,255,.04), rgba(255,255,255,.08), rgba(255,255,255,.04));
+      background-size: 240% 100%;
+      animation: shimmer 1.35s ease-in-out infinite;
+    }
+    @keyframes shimmer{
+      0%{ background-position: 0% 0%; }
+      100%{ background-position: 200% 0%; }
+    }
+    @media (prefers-reduced-motion: reduce){
+      .sk{ animation:none; }
+    }
+
+    /* 右侧表单 */
+    .form-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .form-title h2{
+      margin:0;
+      font-size: 18px;
+      letter-spacing: .06em;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      color: rgba(255,255,255,.74);
+      font-size: 12px;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .badge i{
+      width: 8px;
+      height: 8px;
+      border-radius: 99px;
+      background: radial-gradient(circle at 30% 30%, rgba(52,211,153,.9), rgba(52,211,153,.15));
+      box-shadow: 0 0 0 6px rgba(52,211,153,.08);
+      display:inline-block;
+    }
+
+    .form{
+      display:grid;
+      gap: 14px;
+      margin-top: 12px;
+    }
+
+    .field{
+      position:relative;
+    }
+
+    .input{
+      width:100%;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.20);
+      color: rgba(255,255,255,.92);
+      padding: 28px 14px 12px;
+      font-size: 15px;
+      outline:none;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease, background .15s ease;
+    }
+
+    @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+      .input{
+        background: rgba(255,255,255,.06);
+        backdrop-filter: blur(14px) saturate(135%);
+        -webkit-backdrop-filter: blur(14px) saturate(135%);
+      }
+    }
+
+    .input::placeholder{ color: transparent; }
+    .label{
+      position:absolute;
+      left: 14px;
+      top: 18px;
+      font-size: 13px;
+      color: rgba(255,255,255,.72);
+      pointer-events:none;
+      transform-origin: left top;
+      transition: transform .15s ease, color .15s ease, top .15s ease, opacity .15s ease;
+    }
+
+    .req{
+      color: rgba(251,113,133,.95);
+      font-weight: 800;
+      margin-left: 2px;
+    }
+
+    .input:focus{
+      border-color: rgba(110,231,255,.42);
+      box-shadow: 0 0 0 4px rgba(110,231,255,.12), 0 16px 44px rgba(0,0,0,.35);
+      transform: translateY(-1px);
+    }
+    .input:focus-visible{ outline: none; }
+    .input:focus + .label,
+    .input:not(:placeholder-shown) + .label{
+      top: 6px;
+      transform: scale(.80);
+      color: rgba(110,231,255,.86);
+    }
+
+    .hint{
+      margin-top: 8px;
+      color: rgba(255,255,255,.62);
+      font-size: 12px;
+      padding-left: 2px;
+    }
+
+    .error{
+      display:none;
+      margin-top: 8px;
+      color: rgba(251,113,133,.95);
+      font-size: 12px;
+      padding-left: 2px;
+      font-weight: 600;
+    }
+
+    .field.invalid .input{
+      border-color: rgba(251,113,133,.55);
+      box-shadow: 0 0 0 4px rgba(251,113,133,.12);
+    }
+    .field.valid .input{
+      border-color: rgba(34,197,94,.45);
+      box-shadow: 0 0 0 4px rgba(34,197,94,.10);
+    }
+    .field.invalid .error{ display:block; }
+
+    .actions{
+      display:grid;
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .btn{
+      width:100%;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 16px;
+      background:
+        radial-gradient(1200px 260px at 20% 0%, rgba(110,231,255,.22), transparent 60%),
+        linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
+      color: rgba(255,255,255,.92);
+      padding: 14px 14px;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: .04em;
+      cursor:pointer;
+      box-shadow: var(--shadow-soft);
+      position:relative;
+      overflow:hidden;
+      transition: transform .15s ease, border-color .15s ease, background .15s ease, box-shadow .15s ease;
+    }
+    .btn::after{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background: linear-gradient(90deg, transparent, rgba(110,231,255,.22), rgba(167,139,250,.18), transparent);
+      transform: translateX(-40%);
+      opacity:.0;
+      transition: transform .55s ease, opacity .2s ease;
+      pointer-events:none;
+    }
+    .btn:hover{ transform: translateY(-1px); border-color: rgba(255,255,255,.28); box-shadow: 0 26px 80px rgba(0,0,0,.55); }
+    .btn:hover::after{ opacity:.9; transform: translateX(30%); }
+    .btn:active{ transform: translateY(0px); }
+    .btn:disabled{ opacity:.6; cursor:not-allowed; }
+    .btn:focus-visible{ outline: 3px solid var(--focus); outline-offset: 3px; }
+
+    .btn-row{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap: 10px;
+    }
+    .spinner{
+      width: 18px;
+      height: 18px;
+      border-radius: 999px;
+      border: 2px solid rgba(255,255,255,.28);
+      border-top-color: rgba(255,255,255,.92);
+      animation: spin .8s linear infinite;
+      display:none;
+    }
+    @keyframes spin{ to{ transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce){
+      .spinner{ animation:none; }
+    }
+    .btn.loading .spinner{ display:inline-block; }
+    .btn.loading .btn-text{ opacity:.72; }
+
+    .legal{
+      margin-top: 14px;
+      color: rgba(255,255,255,.58);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .legal a{
+      color: rgba(110,231,255,.86);
+      text-decoration:none;
+    }
+    .legal a:hover{ text-decoration: underline; }
+    .legal a:focus-visible{ outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 10px; }
+
+    /* Toast */
+    .toast{
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      max-width: min(520px, calc(100vw - 36px));
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(10, 14, 28, .65);
+      box-shadow: var(--shadow);
+      padding: 14px 14px;
+      display:flex;
+      align-items:flex-start;
+      gap: 12px;
+      transform: translateY(22px);
+      opacity: 0;
+      pointer-events:none;
+      transition: transform .22s ease, opacity .22s ease;
+      z-index: 40;
+    }
+    @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+      .toast{ backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%); }
+    }
+    .toast.show{ transform: translateY(0); opacity: 1; pointer-events:auto; }
+    .t-ico{
+      width: 34px;
+      height: 34px;
+      border-radius: 14px;
+      display:grid;
+      place-items:center;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      flex: 0 0 auto;
+      font-weight: 900;
+    }
+    .toast.success .t-ico{ color: rgba(34,197,94,.92); background: rgba(34,197,94,.10); border-color: rgba(34,197,94,.22); }
+    .toast.error .t-ico{ color: rgba(251,113,133,.95); background: rgba(251,113,133,.10); border-color: rgba(251,113,133,.22); }
+    .toast.warning .t-ico{ color: rgba(251,191,36,.95); background: rgba(251,191,36,.10); border-color: rgba(251,191,36,.22); }
+    .t-body{ flex:1 1 auto; }
+    .t-title{ font-weight: 900; letter-spacing: .02em; margin: 1px 0 3px; }
+    .t-msg{ color: rgba(255,255,255,.72); font-size: 13px; line-height: 1.55; }
+    .t-close{
+      border:none;
+      background: transparent;
+      color: rgba(255,255,255,.74);
+      cursor:pointer;
+      padding: 8px;
+      border-radius: 12px;
+    }
+    .t-close:hover{ background: rgba(255,255,255,.06); }
+    .t-close:focus-visible{ outline: 3px solid var(--focus); outline-offset: 3px; }
+
+    .sr-only{
+      position:absolute;
+      width:1px;
+      height:1px;
+      padding:0;
+      margin:-1px;
+      overflow:hidden;
+      clip:rect(0,0,0,0);
+      white-space:nowrap;
+      border:0;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-noise" aria-hidden="true"></div>
+  <div class="bg-orb" aria-hidden="true"></div>
+  <div class="bg-orb orb-b" aria-hidden="true"></div>
+
+  <main class="wrap">
+    <div class="shell">
+      <!-- 左侧：文案 + 流程 + Q&A -->
+      <section class="glass hero" aria-label="页面介绍">
+        <div class="panel">
+          <div class="brand">
+            <div class="chip" aria-label="系统状态">
+              <span class="chip-dot" aria-hidden="true"></span>
+              <span>邀请申请通道</span>
+              <small>公开提交</small>
+            </div>
+          </div>
+
+          <h1>Google 邀请申请</h1>
+          <p>输入订单号与 Gmail 邮箱即可提交申请，我们将按队列审核处理。</p>
+
+          <div class="meta" role="list" aria-label="关键信息">
+            <div class="meta-card" role="listitem">
+              <b>处理时效</b>
+              <span>通常 24 小时内</span>
+            </div>
+            <div class="meta-card" role="listitem">
+              <b>邮箱要求</b>
+              <span>仅支持 @gmail.com</span>
+            </div>
+          </div>
+
+          <div class="qa" aria-label="常见问题">
+            <div class="qa-head">
+              <h2>FAQ</h2>
+              <button type="button" id="reloadQA">刷新</button>
+            </div>
+
+            <div id="qaSkeleton" class="qa-skeleton" aria-hidden="true">
+              <div class="sk"></div>
+              <div class="sk"></div>
+              <div class="sk"></div>
+            </div>
+
+            <div id="qaList" class="qa-list" aria-live="polite" aria-busy="true"></div>
+            <p id="qaEmpty" class="hint" style="display:none;margin:10px 0 0;">暂无常见问题。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 右侧：表单 -->
+      <section class="glass" aria-label="申请表单">
+        <div class="panel">
+          <div class="form-title">
+            <h2>提交申请</h2>
+            <div class="badge" aria-label="提示">
+              <i aria-hidden="true"></i>
+              <span>无需邀请码</span>
+            </div>
+          </div>
+
+          <form id="applyForm" class="form" novalidate>
+            <div class="field" id="fieldOrder">
+              <input
+                class="input"
+                id="orderNumber"
+                name="orderNumber"
+                type="text"
+                inputmode="text"
+                autocomplete="off"
+                placeholder="订单号"
+                required
+              />
+              <label class="label" for="orderNumber">订单号<span class="req">*</span></label>
+              <div class="hint">请输入购买服务时获得的订单号。</div>
+              <div class="error" id="orderError" role="alert"></div>
+            </div>
+
+            <div class="field" id="fieldEmail">
+              <input
+                class="input"
+                id="emailAddress"
+                name="emailAddress"
+                type="email"
+                inputmode="email"
+                autocomplete="email"
+                placeholder="Gmail 邮箱"
+                required
+              />
+              <label class="label" for="emailAddress">Gmail 邮箱<span class="req">*</span></label>
+              <div class="hint">必须以 <span style="color:rgba(110,231,255,.88)">@gmail.com</span> 结尾。</div>
+              <div class="error" id="emailError" role="alert"></div>
+            </div>
+
+            <div class="actions">
+              <button id="submitBtn" type="submit" class="btn">
+                <span class="btn-row">
+                  <span class="spinner" aria-hidden="true"></span>
+                  <span class="btn-text">提交申请</span>
+                </span>
+              </button>
+            </div>
+
+            <div class="legal">
+              提交即表示你同意我们仅将订单号与邮箱用于邀请处理与必要的沟通通知。
+              如需使用邀请码提交邮箱，请前往 <a href="/invite.html">邀请码页面</a>。
+            </div>
+
+            <div id="liveRegion" class="sr-only" aria-live="polite"></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- 第三部分：邮箱查询订单 -->
+      <section class="glass" aria-label="邮箱查询订单">
+        <div class="panel">
+          <div class="form-title">
+            <h2>查询订单</h2>
+            <div class="badge" aria-label="提示">
+              <i aria-hidden="true"></i>
+              <span>已提交可查询</span>
+            </div>
+          </div>
+
+          <p class="hint" style="margin: 0 0 16px; font-size: 14px; color: rgba(255,255,255,.72);">
+            如已提交过申请，可通过邮箱查询订单状态和邀请码。
+          </p>
+
+          <div class="field" id="fieldQueryEmail">
+            <input
+              class="input"
+              id="queryEmail"
+              type="email"
+              inputmode="email"
+              autocomplete="email"
+              placeholder="Gmail 邮箱"
+            />
+            <label class="label" for="queryEmail">Gmail 邮箱</label>
+            <div class="hint">请输入提交申请时使用的 Gmail 邮箱。</div>
+          </div>
+
+          <div class="actions" style="margin-top: 16px;">
+            <button id="queryBtn" type="button" class="btn">
+              <span class="btn-row">
+                <span class="spinner" aria-hidden="true"></span>
+                <span class="btn-text">查询订单</span>
+              </span>
+            </button>
+          </div>
+
+          <div id="queryResult" class="query-result" style="display:none; margin-top: 16px;"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true">
+    <div class="t-ico" id="toastIco" aria-hidden="true">i</div>
+    <div class="t-body">
+      <div class="t-title" id="toastTitle">提示</div>
+      <div class="t-msg" id="toastMsg"></div>
+    </div>
+    <button class="t-close" type="button" id="toastClose" aria-label="关闭提示">✕</button>
+  </div>
+
+  <script>
+    const API = {
+      qaPublic: "/api/invite/qa/public",
+      apply: "/api/invite/apply",
+      queryByEmail: "/api/invite/queryByEmail"
+    };
+
+    const el = (id) => document.getElementById(id);
+
+    const state = {
+      toastTimer: null
+    };
+
+    function setLive(message) {
+      el("liveRegion").textContent = message || "";
+    }
+
+    function setFieldState(fieldEl, isValid, message) {
+      fieldEl.classList.remove("valid", "invalid");
+      if (typeof isValid !== "boolean") return;
+      fieldEl.classList.add(isValid ? "valid" : "invalid");
+
+      const errorEl = fieldEl.querySelector(".error");
+      if (errorEl) errorEl.textContent = isValid ? "" : (message || "请检查输入");
+    }
+
+    function normalizeEmail(value) {
+      return (value || "").trim();
+    }
+
+    function validateOrder() {
+      const field = el("fieldOrder");
+      const value = el("orderNumber").value.trim();
+      if (!value) {
+        setFieldState(field, false, "请输入订单号");
+        return false;
+      }
+      setFieldState(field, true);
+      return true;
+    }
+
+    function validateEmail() {
+      const field = el("fieldEmail");
+      const value = normalizeEmail(el("emailAddress").value);
+      if (!value) {
+        setFieldState(field, false, "请输入 Gmail 邮箱");
+        return false;
+      }
+
+      const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+      if (!gmailRegex.test(value)) {
+        setFieldState(field, false, "请输入有效的 Gmail 邮箱（必须以 @gmail.com 结尾）");
+        return false;
+      }
+
+      setFieldState(field, true);
+      return true;
+    }
+
+    function toast(type, title, message, options = {}) {
+      const node = el("toast");
+      const ico = el("toastIco");
+      node.classList.remove("success", "error", "warning");
+      node.classList.add(type || "success");
+
+      ico.textContent = type === "success" ? "✓" : (type === "error" ? "!" : "i");
+      el("toastTitle").textContent = title || "提示";
+      el("toastMsg").textContent = message || "";
+
+      node.classList.add("show");
+      setLive([title, message].filter(Boolean).join("："));
+
+      if (state.toastTimer) clearTimeout(state.toastTimer);
+      const duration = typeof options.duration === "number" ? options.duration : 4200;
+      state.toastTimer = setTimeout(() => {
+        node.classList.remove("show");
+      }, duration);
+    }
+
+    function closeToast() {
+      el("toast").classList.remove("show");
+      if (state.toastTimer) clearTimeout(state.toastTimer);
+      state.toastTimer = null;
+    }
+
+    async function loadQAList() {
+      el("qaEmpty").style.display = "none";
+      el("qaSkeleton").style.display = "grid";
+      el("qaList").innerHTML = "";
+      el("qaList").setAttribute("aria-busy", "true");
+
+      try {
+        const res = await fetch(API.qaPublic, { method: "GET" });
+        const data = await res.json().catch(() => ({}));
+        const list = (data && data.success && Array.isArray(data.data)) ? data.data : [];
+
+        if (list.length === 0) {
+          el("qaEmpty").style.display = "block";
+          return;
+        }
+
+        const frag = document.createDocumentFragment();
+        list.forEach((qa, idx) => {
+          const details = document.createElement("details");
+          details.className = "qa-item";
+          if (idx === 0) details.open = true;
+
+          const summary = document.createElement("summary");
+
+          const qIcon = document.createElement("span");
+          qIcon.className = "qa-q";
+          qIcon.textContent = "Q";
+          qIcon.setAttribute("aria-hidden", "true");
+
+          const qText = document.createElement("span");
+          qText.className = "qa-txt";
+          qText.textContent = (qa && qa.question) ? qa.question : "（空）";
+
+          summary.appendChild(qIcon);
+          summary.appendChild(qText);
+
+          const a = document.createElement("div");
+          a.className = "qa-a";
+          a.textContent = (qa && qa.answer) ? qa.answer : "";
+
+          details.appendChild(summary);
+          details.appendChild(a);
+          frag.appendChild(details);
+        });
+
+        el("qaList").appendChild(frag);
+      } catch (e) {
+        el("qaEmpty").style.display = "block";
+        el("qaEmpty").textContent = "加载失败，请稍后重试。";
+      } finally {
+        el("qaSkeleton").style.display = "none";
+        el("qaList").setAttribute("aria-busy", "false");
+      }
+    }
+
+    function setSubmitting(isSubmitting) {
+      const btn = el("submitBtn");
+      btn.disabled = isSubmitting;
+      btn.classList.toggle("loading", isSubmitting);
+    }
+
+    async function handleSubmit(event) {
+      event.preventDefault();
+      closeToast();
+
+      const okOrder = validateOrder();
+      const okEmail = validateEmail();
+      if (!okOrder || !okEmail) {
+        toast("warning", "信息未填写完整", "请检查订单号与 Gmail 邮箱后再提交。");
+        return false;
+      }
+
+      const orderNumber = el("orderNumber").value.trim();
+      const emailAddress = normalizeEmail(el("emailAddress").value);
+
+      setSubmitting(true);
+      try {
+        const res = await fetch(API.apply, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderNumber, emailAddress })
+        });
+
+        const result = await res.json().catch(() => ({}));
+        const success = !!(result && result.success);
+
+        if (!res.ok && success) {
+          toast("success", "申请已提交", result.message || "提交成功。");
+          el("applyForm").reset();
+          setFieldState(el("fieldOrder"));
+          setFieldState(el("fieldEmail"));
+          return false;
+        }
+
+        if (success) {
+          const code = result.inviteCode ? `邀请码：${result.inviteCode}` : "";
+          toast("success", "申请提交成功", [result.message || "我们将尽快处理你的申请。", code].filter(Boolean).join(" "));
+          el("applyForm").reset();
+          setFieldState(el("fieldOrder"));
+          setFieldState(el("fieldEmail"));
+        } else {
+          const msg = (result && result.message) ? result.message : "提交失败，请稍后重试。";
+          toast("error", "提交失败", msg);
+        }
+      } catch (e) {
+        toast("error", "网络错误", "请检查网络连接后重试。");
+      } finally {
+        setSubmitting(false);
+      }
+
+      return false;
+    }
+
+    // 邮箱查询功能
+    function setQueryLoading(isLoading) {
+      const btn = el("queryBtn");
+      btn.disabled = isLoading;
+      btn.classList.toggle("loading", isLoading);
+    }
+
+    function showQueryResult(type, content) {
+      const resultEl = el("queryResult");
+      resultEl.className = "query-result " + type;
+      resultEl.innerHTML = content;
+      resultEl.style.display = "block";
+    }
+
+    function hideQueryResult() {
+      el("queryResult").style.display = "none";
+    }
+
+    function validateQueryEmail() {
+      const email = el("queryEmail").value.trim();
+      const field = el("fieldQueryEmail");
+
+      if (!email) {
+        field.classList.remove("valid");
+        field.classList.add("invalid");
+        return false;
+      }
+
+      const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+      if (!gmailRegex.test(email)) {
+        field.classList.remove("valid");
+        field.classList.add("invalid");
+        return false;
+      }
+
+      field.classList.remove("invalid");
+      field.classList.add("valid");
+      return true;
+    }
+
+    async function handleQuery() {
+      const email = el("queryEmail").value.trim();
+      if (!email) {
+        toast("warning", "请输入邮箱", "请先输入要查询的 Gmail 邮箱。");
+        return;
+      }
+
+      const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
+      if (!gmailRegex.test(email)) {
+        toast("warning", "邮箱格式错误", "请输入有效的 Gmail 邮箱。");
+        return;
+      }
+
+      hideQueryResult();
+      setQueryLoading(true);
+
+      try {
+        const res = await fetch(`${API.queryByEmail}?email=${encodeURIComponent(email)}`, {
+          method: "GET"
+        });
+
+        const result = await res.json().catch(() => ({}));
+
+        if (result && result.success && result.data) {
+          const data = result.data;
+          const inviteCode = data.inviteCode || "";
+
+          if (inviteCode) {
+            toast("success", "查询成功", "正在跳转到邀请页面...", { duration: 2000 });
+            setTimeout(() => {
+              window.location.href = `/invite/${encodeURIComponent(inviteCode)}`;
+            }, 1500);
+          } else {
+            let html = '<div class="result-row"><span class="result-label">订单号：</span><span class="result-value">' + (data.orderNumber || "-") + '</span></div>';
+            html += '<div class="result-row"><span class="result-label">状态：</span><span class="result-value">' + (data.status || "处理中") + '</span></div>';
+            html += '<div class="result-row"><span class="result-label">提示：</span><span class="result-value">邀请码尚未生成，请耐心等待</span></div>';
+            showQueryResult("success", html);
+          }
+        } else {
+          const msg = (result && result.message) ? result.message : "未找到对应的订单信息";
+          showQueryResult("error", msg);
+        }
+      } catch (e) {
+        showQueryResult("error", "查询失败，请检查网络连接后重试。");
+      } finally {
+        setQueryLoading(false);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadQAList();
+
+      el("reloadQA").addEventListener("click", () => {
+        loadQAList();
+        toast("success", "已刷新", "已重新加载常见问题。", { duration: 2400 });
+      });
+
+      el("toastClose").addEventListener("click", closeToast);
+
+      el("orderNumber").addEventListener("blur", validateOrder);
+      el("emailAddress").addEventListener("blur", validateEmail);
+      el("applyForm").addEventListener("submit", handleSubmit);
+
+      // 邮箱查询
+      el("queryBtn").addEventListener("click", handleQuery);
+      el("queryEmail").addEventListener("blur", validateQueryEmail);
+      el("queryEmail").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          handleQuery();
+        }
+      });
+    });
+  </script>
+</body>
+</html>

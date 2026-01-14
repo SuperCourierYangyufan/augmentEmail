@@ -96,6 +96,7 @@ public class GoogleInviteService {
         result.put("valid", true);
         result.put("status", invite.getStatus().name());
         result.put("statusDescription", invite.getStatus().getDescription());
+        result.put("orderNumber", invite.getOrderNumber());
         result.put("emailAddress", invite.getEmailAddress());
         result.put("canModify", invite.canModify());
         result.put("isEmailFilled", invite.isEmailFilled());
@@ -299,6 +300,217 @@ public class GoogleInviteService {
     }
 
     /**
+     * 谷歌邮箱格式校验（必须是 @gmail.com）
+     *
+     * @param email 邮箱地址
+     * @return 是否为谷歌邮箱
+     */
+    private boolean isGoogleEmail(String email) {
+        if (email == null || email.trim().isEmpty()) {
+            return false;
+        }
+        return email.toLowerCase().endsWith("@gmail.com");
+    }
+
+    /**
+     * 提交订单号和邮箱信息（新方法）
+     *
+     * @param inviteCode 邀请码
+     * @param orderNumber 订单号
+     * @param emailAddress 谷歌邮箱地址
+     * @return 提交结果
+     */
+    public Map<String, Object> submitOrderAndEmail(String inviteCode, String orderNumber, String emailAddress) {
+        Map<String, Object> result = new HashMap<>();
+
+        // 校验邀请码
+        Optional<GoogleInvite> inviteOpt = googleInviteRepository.findByInviteCode(inviteCode);
+        if (!inviteOpt.isPresent()) {
+            result.put("success", false);
+            result.put("message", "邀请码不存在");
+            return result;
+        }
+
+        GoogleInvite invite = inviteOpt.get();
+
+        // 检查是否可修改
+        if (!invite.canModify()) {
+            result.put("success", false);
+            result.put("message", "该邀请已处理，无法修改");
+            return result;
+        }
+
+        // 校验订单号
+        if (orderNumber == null || orderNumber.trim().isEmpty()) {
+            result.put("success", false);
+            result.put("message", "订单号不能为空");
+            return result;
+        }
+
+        // 校验邮箱格式
+        if (!isValidEmail(emailAddress)) {
+            result.put("success", false);
+            result.put("message", "邮箱格式不正确");
+            return result;
+        }
+
+        // 校验是否为谷歌邮箱
+        if (!isGoogleEmail(emailAddress)) {
+            result.put("success", false);
+            result.put("message", "请使用谷歌邮箱（@gmail.com）");
+            return result;
+        }
+
+        // 检查订单号是否已被其他邀请使用（排除当前记录）
+        Optional<GoogleInvite> existingByOrder = googleInviteRepository.findByOrderNumber(orderNumber.trim());
+        if (existingByOrder.isPresent() && !existingByOrder.get().getId().equals(invite.getId())) {
+            result.put("success", false);
+            result.put("message", "该订单号已提交过申请");
+            return result;
+        }
+
+        // 检查邮箱是否已被其他邀请使用（排除当前记录）
+        Optional<GoogleInvite> existingByEmail = googleInviteRepository.findByEmailAddress(emailAddress);
+        if (existingByEmail.isPresent() && !existingByEmail.get().getId().equals(invite.getId())) {
+            result.put("success", false);
+            result.put("message", "该邮箱已被其他邀请使用");
+            return result;
+        }
+
+        // 提交订单号和邮箱
+        invite.submitOrderAndEmail(orderNumber.trim(), emailAddress);
+        googleInviteRepository.save(invite);
+
+        logger.info("订单提交成功，邀请码: {}, 订单号: {}, 邮箱: {}", inviteCode, orderNumber, emailAddress);
+
+        result.put("success", true);
+        result.put("message", "提交成功，请等待处理");
+        result.put("status", invite.getStatus().name());
+
+        return result;
+    }
+
+    /**
+     * 直接申请邀请（无需邀请码）
+     * 自动创建邀请记录并提交订单号和邮箱
+     *
+     * @param orderNumber 订单号
+     * @param emailAddress 谷歌邮箱地址
+     * @return 申请结果
+     */
+    public Map<String, Object> applyDirect(String orderNumber, String emailAddress) {
+        Map<String, Object> result = new HashMap<>();
+
+        // 校验订单号
+        if (orderNumber == null || orderNumber.trim().isEmpty()) {
+            result.put("success", false);
+            result.put("message", "订单号不能为空");
+            return result;
+        }
+
+        // 校验邮箱格式
+        if (!isValidEmail(emailAddress)) {
+            result.put("success", false);
+            result.put("message", "邮箱格式不正确");
+            return result;
+        }
+
+        // 校验是否为谷歌邮箱
+        if (!isGoogleEmail(emailAddress)) {
+            result.put("success", false);
+            result.put("message", "请使用谷歌邮箱（@gmail.com）");
+            return result;
+        }
+
+        String trimmedOrderNumber = orderNumber.trim();
+
+        // 检查订单号是否已被使用
+        Optional<GoogleInvite> existingByOrder = googleInviteRepository.findByOrderNumber(trimmedOrderNumber);
+        if (existingByOrder.isPresent()) {
+            result.put("success", false);
+            result.put("message", "该订单号已提交过申请");
+            return result;
+        }
+
+        // 检查邮箱是否已被使用
+        Optional<GoogleInvite> existingByEmail = googleInviteRepository.findByEmailAddress(emailAddress);
+        if (existingByEmail.isPresent()) {
+            result.put("success", false);
+            result.put("message", "该邮箱已被使用");
+            return result;
+        }
+
+        // 生成邀请码（自动生成，用于内部管理）
+        String inviteCode = generateShortUUID();
+        while (googleInviteRepository.existsByInviteCode(inviteCode)) {
+            inviteCode = generateShortUUID();
+        }
+
+        // 创建邀请记录并直接提交
+        GoogleInvite invite = GoogleInvite.builder()
+                .inviteCode(inviteCode)
+                .orderNumber(trimmedOrderNumber)
+                .emailAddress(emailAddress)
+                .status(GoogleInvite.InviteStatus.SUBMITTED)
+                .createTime(LocalDateTime.now())
+                .fillTime(LocalDateTime.now())
+                .build();
+
+        googleInviteRepository.save(invite);
+
+        logger.info("直接申请成功，邀请码: {}, 订单号: {}, 邮箱: {}", inviteCode, trimmedOrderNumber, emailAddress);
+
+        result.put("success", true);
+        result.put("message", "申请提交成功，请等待处理");
+        result.put("inviteCode", inviteCode);
+
+        return result;
+    }
+
+    /**
+     * 根据邮箱查询邀请记录
+     *
+     * @param email 邮箱地址
+     * @return 查询结果
+     */
+    public Map<String, Object> queryByEmail(String email) {
+        Map<String, Object> result = new HashMap<>();
+
+        // 校验邮箱格式
+        if (email == null || email.trim().isEmpty()) {
+            result.put("success", false);
+            result.put("message", "邮箱不能为空");
+            return result;
+        }
+
+        String trimmedEmail = email.trim();
+
+        // 校验是否为谷歌邮箱
+        if (!isGoogleEmail(trimmedEmail)) {
+            result.put("success", false);
+            result.put("message", "请输入有效的 Gmail 邮箱");
+            return result;
+        }
+
+        // 根据邮箱查询
+        Optional<GoogleInvite> inviteOpt = googleInviteRepository.findByEmailAddress(trimmedEmail);
+        if (!inviteOpt.isPresent()) {
+            result.put("success", false);
+            result.put("message", "未找到该邮箱对应的申请记录");
+            return result;
+        }
+
+        GoogleInvite invite = inviteOpt.get();
+        logger.info("邮箱查询成功，邮箱: {}, 邀请码: {}", trimmedEmail, invite.getInviteCode());
+
+        result.put("success", true);
+        result.put("message", "查询成功");
+        result.put("data", convertToMap(invite));
+
+        return result;
+    }
+
+    /**
      * 将实体转换为Map
      *
      * @param invite 邀请实体
@@ -308,6 +520,7 @@ public class GoogleInviteService {
         Map<String, Object> map = new HashMap<>();
         map.put("id", invite.getId());
         map.put("inviteCode", invite.getInviteCode());
+        map.put("orderNumber", invite.getOrderNumber());
         map.put("emailAddress", invite.getEmailAddress());
         map.put("status", invite.getStatus().name());
         map.put("statusDescription", invite.getStatus().getDescription());

@@ -62,10 +62,16 @@ public class WebConfig implements WebMvcConfigurer {
                         // 邀请相关公开接口和页面
                         "/invite/**",
                         "/invite.html",
+                        "/invite-apply",
+                        "/invite-apply.html",
                         "/api/invite/generate",
                         "/api/invite/check/**",
                         "/api/invite/submit/**",
                         "/api/invite/update/**",
+                        "/api/invite/apply",
+                        "/api/invite/queryByEmail",
+                        "/api/invite/qa/public",
+                        "/api/invite/submitOrder/**",
 
                         // 静态资源
                         "/css/**",
@@ -108,7 +114,11 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/invite/generate",
                         "/api/invite/check/**",
                         "/api/invite/submit/**",
-                        "/api/invite/update/**"
+                        "/api/invite/update/**",
+                        "/api/invite/apply",
+                        "/api/invite/queryByEmail",
+                        "/api/invite/qa/public",
+                        "/api/invite/submitOrder/**"
                 )
                 .order(1); // 设置更高的优先级
 

@@ -73,4 +73,20 @@ public interface GoogleInviteRepository extends JpaRepository<GoogleInvite, Long
      * @return 邀请记录
      */
     Optional<GoogleInvite> findByEmailAddress(String emailAddress);
+
+    /**
+     * 根据订单号查找记录
+     *
+     * @param orderNumber 订单号
+     * @return 邀请记录
+     */
+    Optional<GoogleInvite> findByOrderNumber(String orderNumber);
+
+    /**
+     * 检查订单号是否已被使用
+     *
+     * @param orderNumber 订单号
+     * @return 是否存在
+     */
+    boolean existsByOrderNumber(String orderNumber);
 }
