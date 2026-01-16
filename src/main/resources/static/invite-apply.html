@@ -791,7 +791,7 @@
 
           <div class="qa" aria-label="常见问题">
             <div class="qa-head">
-              <h2>FAQ</h2>
+              <h2>Q&A</h2>
               <button type="button" id="reloadQA">刷新</button>
             </div>
 
@@ -1027,7 +1027,7 @@
         list.forEach((qa, idx) => {
           const details = document.createElement("details");
           details.className = "qa-item";
-          if (idx === 0) details.open = true;
+          details.open = true; // 默认展开所有
 
           const summary = document.createElement("summary");
 

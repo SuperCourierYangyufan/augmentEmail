@@ -217,4 +217,58 @@ public class InviteQAController {
             return ResponseEntity.status(500).body(errorResponse);
         }
     }
+
+    /**
+     * 上移Q&A（管理端）
+     * 需要超级管理员权限
+     *
+     * @param id Q&A ID
+     * @return 操作结果
+     */
+    @PostMapping("/{id}/move-up")
+    public ResponseEntity<Map<String, Object>> moveUp(@PathVariable Long id) {
+        logger.info("上移Q&A，ID: {}", id);
+
+        try {
+            Map<String, Object> result = inviteQAService.moveUp(id);
+            if ((Boolean) result.get("success")) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.badRequest().body(result);
+            }
+        } catch (Exception e) {
+            logger.error("上移Q&A失败: {}", e.getMessage(), e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "操作失败: " + e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
+
+    /**
+     * 下移Q&A（管理端）
+     * 需要超级管理员权限
+     *
+     * @param id Q&A ID
+     * @return 操作结果
+     */
+    @PostMapping("/{id}/move-down")
+    public ResponseEntity<Map<String, Object>> moveDown(@PathVariable Long id) {
+        logger.info("下移Q&A，ID: {}", id);
+
+        try {
+            Map<String, Object> result = inviteQAService.moveDown(id);
+            if ((Boolean) result.get("success")) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.badRequest().body(result);
+            }
+        } catch (Exception e) {
+            logger.error("下移Q&A失败: {}", e.getMessage(), e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "操作失败: " + e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
 }

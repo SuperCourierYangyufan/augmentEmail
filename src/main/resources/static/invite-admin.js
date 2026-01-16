@@ -365,6 +365,9 @@ async function loadQAList() {
     }
 }
 
+// 全局存储 Q&A 数据用于编辑
+let qaDataMap = {};
+
 // 渲染 Q&A 列表
 function renderQAList(qaList) {
     const container = document.getElementById('qaListContainer');
@@ -377,13 +380,20 @@ function renderQAList(qaList) {
                 <p style="margin-top: 8px; font-size: 0.875rem;">点击上方 "添加 Q&A" 创建第一条问答</p>
             </div>
         `;
+        qaDataMap = {};
         return;
     }
 
-    let html = '<div class="qa-list">';
+    // 存储数据供编辑使用
+    qaDataMap = {};
     qaList.forEach(qa => {
+        qaDataMap[qa.id] = qa;
+    });
+
+    let html = '<div class="qa-list">';
+    qaList.forEach((qa, index) => {
         html += `
-            <div class="qa-item ${qa.enabled ? '' : 'disabled'}">
+            <div class="qa-item ${qa.enabled ? '' : 'disabled'}" data-id="${qa.id}">
                 <div class="qa-question">Q: ${escapeHtml(qa.question)}</div>
                 <div class="qa-answer">A: ${escapeHtml(qa.answer)}</div>
                 <div class="qa-meta">
@@ -391,7 +401,13 @@ function renderQAList(qaList) {
                     <span>${qa.createTime ? qa.createTime.substring(0, 10) : ''}</span>
                 </div>
                 <div class="qa-actions">
-                    <button class="btn btn-primary btn-sm" onclick="showEditQAForm(${qa.id}, '${escapeHtml(qa.question).replace(/'/g, "\\'")}', '${escapeHtml(qa.answer).replace(/'/g, "\\'")}')">
+                    <button class="btn btn-secondary btn-sm" onclick="moveQAUp(${qa.id})" ${index === 0 ? 'disabled' : ''}>
+                        ⬆️ 上移
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="moveQADown(${qa.id})" ${index === qaList.length - 1 ? 'disabled' : ''}>
+                        ⬇️ 下移
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="showEditQAFormById(${qa.id})">
                         ✏️ 编辑
                     </button>
                     <button class="btn btn-${qa.enabled ? 'warning' : 'success'} btn-sm" onclick="toggleQA(${qa.id})">
@@ -417,7 +433,21 @@ function showAddQAForm() {
     document.getElementById('qaEditModal').style.display = 'flex';
 }
 
-// 显示编辑 Q&A 表单
+// 通过 ID 显示编辑 Q&A 表单（从全局数据中获取）
+function showEditQAFormById(id) {
+    const qa = qaDataMap[id];
+    if (!qa) {
+        alert('未找到该 Q&A 数据，请刷新后重试');
+        return;
+    }
+    document.getElementById('qaEditTitle').textContent = '编辑 Q&A';
+    document.getElementById('qaEditId').value = id;
+    document.getElementById('qaQuestionInput').value = qa.question || '';
+    document.getElementById('qaAnswerInput').value = qa.answer || '';
+    document.getElementById('qaEditModal').style.display = 'flex';
+}
+
+// 显示编辑 Q&A 表单（兼容旧调用）
 function showEditQAForm(id, question, answer) {
     document.getElementById('qaEditTitle').textContent = '编辑 Q&A';
     document.getElementById('qaEditId').value = id;
@@ -518,6 +548,46 @@ async function deleteQA(id) {
         }
     } catch (error) {
         console.error('删除 Q&A 失败:', error);
+        alert('网络错误，请稍后重试');
+    }
+}
+
+// 上移 Q&A
+async function moveQAUp(id) {
+    try {
+        const response = await fetch(`/api/invite/qa/${id}/move-up`, {
+            method: 'POST'
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            loadQAList();
+        } else {
+            alert('操作失败: ' + result.message);
+        }
+    } catch (error) {
+        console.error('上移 Q&A 失败:', error);
+        alert('网络错误，请稍后重试');
+    }
+}
+
+// 下移 Q&A
+async function moveQADown(id) {
+    try {
+        const response = await fetch(`/api/invite/qa/${id}/move-down`, {
+            method: 'POST'
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            loadQAList();
+        } else {
+            alert('操作失败: ' + result.message);
+        }
+    } catch (error) {
+        console.error('下移 Q&A 失败:', error);
         alert('网络错误，请稍后重试');
     }
 }

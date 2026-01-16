@@ -17,19 +17,19 @@ import java.util.List;
 public interface InviteQARepository extends JpaRepository<InviteQA, Long> {
 
     /**
-     * 获取所有启用的Q&A，按排序权重降序
+     * 获取所有启用的Q&A，按排序权重升序（从早到晚）
      *
      * @return Q&A列表
      */
-    @Query("SELECT q FROM InviteQA q WHERE q.enabled = true ORDER BY q.sortOrder DESC, q.createTime ASC")
+    @Query("SELECT q FROM InviteQA q WHERE q.enabled = true ORDER BY q.sortOrder ASC, q.createTime ASC")
     List<InviteQA> findAllEnabledOrderBySortOrder();
 
     /**
-     * 获取所有Q&A，按排序权重降序（管理端使用）
+     * 获取所有Q&A，按排序权重升序（管理端使用，从早到晚）
      *
      * @return Q&A列表
      */
-    @Query("SELECT q FROM InviteQA q ORDER BY q.sortOrder DESC, q.createTime ASC")
+    @Query("SELECT q FROM InviteQA q ORDER BY q.sortOrder ASC, q.createTime ASC")
     List<InviteQA> findAllOrderBySortOrder();
 
     /**

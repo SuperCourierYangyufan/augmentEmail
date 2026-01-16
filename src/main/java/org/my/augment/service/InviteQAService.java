@@ -216,6 +216,108 @@ public class InviteQAService {
     }
 
     /**
+     * 上移Q&A（与上一个交换排序值）
+     *
+     * @param id Q&A ID
+     * @return 操作结果
+     */
+    @Transactional
+    public Map<String, Object> moveUp(Long id) {
+        Map<String, Object> result = new HashMap<>();
+
+        Optional<InviteQA> qaOpt = inviteQARepository.findById(id);
+        if (!qaOpt.isPresent()) {
+            result.put("success", false);
+            result.put("message", "Q&A不存在");
+            return result;
+        }
+
+        InviteQA current = qaOpt.get();
+        List<InviteQA> allQaList = inviteQARepository.findAllOrderBySortOrder();
+
+        // 找到当前项在列表中的位置
+        int currentIndex = -1;
+        for (int i = 0; i < allQaList.size(); i++) {
+            if (allQaList.get(i).getId().equals(id)) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        if (currentIndex <= 0) {
+            result.put("success", false);
+            result.put("message", "已经是第一个了");
+            return result;
+        }
+
+        // 交换排序值
+        InviteQA prev = allQaList.get(currentIndex - 1);
+        Integer tempSort = current.getSortOrder();
+        current.setSortOrder(prev.getSortOrder());
+        prev.setSortOrder(tempSort);
+
+        inviteQARepository.save(current);
+        inviteQARepository.save(prev);
+
+        logger.info("上移Q&A成功，ID: {}", id);
+
+        result.put("success", true);
+        result.put("message", "上移成功");
+        return result;
+    }
+
+    /**
+     * 下移Q&A（与下一个交换排序值）
+     *
+     * @param id Q&A ID
+     * @return 操作结果
+     */
+    @Transactional
+    public Map<String, Object> moveDown(Long id) {
+        Map<String, Object> result = new HashMap<>();
+
+        Optional<InviteQA> qaOpt = inviteQARepository.findById(id);
+        if (!qaOpt.isPresent()) {
+            result.put("success", false);
+            result.put("message", "Q&A不存在");
+            return result;
+        }
+
+        InviteQA current = qaOpt.get();
+        List<InviteQA> allQaList = inviteQARepository.findAllOrderBySortOrder();
+
+        // 找到当前项在列表中的位置
+        int currentIndex = -1;
+        for (int i = 0; i < allQaList.size(); i++) {
+            if (allQaList.get(i).getId().equals(id)) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        if (currentIndex < 0 || currentIndex >= allQaList.size() - 1) {
+            result.put("success", false);
+            result.put("message", "已经是最后一个了");
+            return result;
+        }
+
+        // 交换排序值
+        InviteQA next = allQaList.get(currentIndex + 1);
+        Integer tempSort = current.getSortOrder();
+        current.setSortOrder(next.getSortOrder());
+        next.setSortOrder(tempSort);
+
+        inviteQARepository.save(current);
+        inviteQARepository.save(next);
+
+        logger.info("下移Q&A成功，ID: {}", id);
+
+        result.put("success", true);
+        result.put("message", "下移成功");
+        return result;
+    }
+
+    /**
      * 转换为前端展示用的Map（简化版）
      */
     private Map<String, Object> convertToMap(InviteQA qa) {
