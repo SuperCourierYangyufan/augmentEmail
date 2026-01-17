@@ -329,6 +329,84 @@ function escapeHtml(text) {
 
 // ==================== Q&A 管理功能 ====================
 
+// Q&A 富文本编辑器（Quill）
+let qaAnswerQuill = null;
+
+function looksLikeHtml(str) {
+    return typeof str === 'string' && /<\/?[a-z][\s\S]*>/i.test(str);
+}
+
+function ensureQAAnswerQuill() {
+    const textarea = document.getElementById('qaAnswerInput');
+    const editorHost = document.getElementById('qaAnswerEditor');
+
+    if (!window.Quill) {
+        if (editorHost) editorHost.style.display = 'none';
+        if (textarea) {
+            textarea.style.display = 'block';
+            textarea.style.width = '100%';
+            textarea.style.padding = '12px';
+            textarea.style.border = '2px solid #e0e0e0';
+            textarea.style.borderRadius = '10px';
+            textarea.style.fontSize = '0.95rem';
+            textarea.style.minHeight = '160px';
+            textarea.style.resize = 'vertical';
+        }
+        return;
+    }
+
+    if (editorHost) editorHost.style.display = 'block';
+    if (textarea) textarea.style.display = 'none';
+
+    if (qaAnswerQuill) return;
+
+    qaAnswerQuill = new Quill('#qaAnswerEditor', {
+        theme: 'snow',
+        placeholder: '请输入答案...',
+        modules: {
+            toolbar: [
+                [{ header: [1, 2, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ color: [] }, { background: [] }],
+                [{ list: 'ordered' }, { list: 'bullet' }],
+                [{ align: [] }],
+                ['link', 'code-block'],
+                ['clean']
+            ]
+        }
+    });
+}
+
+function setQAAnswerValue(value) {
+    const textarea = document.getElementById('qaAnswerInput');
+    if (textarea) textarea.value = value || '';
+
+    if (!qaAnswerQuill) return;
+
+    qaAnswerQuill.setContents([]);
+
+    if (!value) {
+        qaAnswerQuill.setText('');
+        return;
+    }
+
+    if (looksLikeHtml(value)) {
+        qaAnswerQuill.setContents(qaAnswerQuill.clipboard.convert(value));
+    } else {
+        qaAnswerQuill.setText(value);
+    }
+}
+
+function getQAAnswerValue() {
+    if (!qaAnswerQuill) {
+        return document.getElementById('qaAnswerInput').value.trim();
+    }
+
+    const plain = qaAnswerQuill.getText().trim();
+    if (!plain) return '';
+    return qaAnswerQuill.root.innerHTML;
+}
+
 // 显示 Q&A 管理模态框
 function showQAManager() {
     document.getElementById('qaModal').style.display = 'flex';
@@ -393,9 +471,12 @@ function renderQAList(qaList) {
     let html = '<div class="qa-list">';
     qaList.forEach((qa, index) => {
         html += `
-            <div class="qa-item ${qa.enabled ? '' : 'disabled'}" data-id="${qa.id}">
+                <div class="qa-item ${qa.enabled ? '' : 'disabled'}" data-id="${qa.id}">
                 <div class="qa-question">Q: ${escapeHtml(qa.question)}</div>
-                <div class="qa-answer">A: ${escapeHtml(qa.answer)}</div>
+                <div class="qa-answer">
+                    <div style="font-weight: 700; color:#333; margin-bottom: 6px;">A:</div>
+                    <div class="qa-answer-editor" id="qa-answer-${qa.id}"></div>
+                </div>
                 <div class="qa-meta">
                     <span>排序: ${qa.sortOrder} | ${qa.enabled ? '✅ 启用中' : '⏸️ 已禁用'}</span>
                     <span>${qa.createTime ? qa.createTime.substring(0, 10) : ''}</span>
@@ -422,6 +503,31 @@ function renderQAList(qaList) {
     });
     html += '</div>';
     container.innerHTML = html;
+
+    // 富文本展示（Quill 只读渲染），失败时降级为纯文本
+    qaList.forEach((qa) => {
+        const host = document.getElementById(`qa-answer-${qa.id}`);
+        if (!host) return;
+
+        const value = (qa && qa.answer) ? String(qa.answer) : '';
+
+        if (!window.Quill) {
+            host.textContent = value;
+            return;
+        }
+
+        const quill = new Quill(host, {
+            theme: 'snow',
+            readOnly: true,
+            modules: { toolbar: false }
+        });
+
+        if (looksLikeHtml(value)) {
+            quill.setContents(quill.clipboard.convert(value));
+        } else {
+            quill.setText(value);
+        }
+    });
 }
 
 // 显示添加 Q&A 表单
@@ -429,7 +535,8 @@ function showAddQAForm() {
     document.getElementById('qaEditTitle').textContent = '添加 Q&A';
     document.getElementById('qaEditId').value = '';
     document.getElementById('qaQuestionInput').value = '';
-    document.getElementById('qaAnswerInput').value = '';
+    ensureQAAnswerQuill();
+    setQAAnswerValue('');
     document.getElementById('qaEditModal').style.display = 'flex';
 }
 
@@ -443,7 +550,8 @@ function showEditQAFormById(id) {
     document.getElementById('qaEditTitle').textContent = '编辑 Q&A';
     document.getElementById('qaEditId').value = id;
     document.getElementById('qaQuestionInput').value = qa.question || '';
-    document.getElementById('qaAnswerInput').value = qa.answer || '';
+    ensureQAAnswerQuill();
+    setQAAnswerValue(qa.answer || '');
     document.getElementById('qaEditModal').style.display = 'flex';
 }
 
@@ -452,7 +560,8 @@ function showEditQAForm(id, question, answer) {
     document.getElementById('qaEditTitle').textContent = '编辑 Q&A';
     document.getElementById('qaEditId').value = id;
     document.getElementById('qaQuestionInput').value = question;
-    document.getElementById('qaAnswerInput').value = answer;
+    ensureQAAnswerQuill();
+    setQAAnswerValue(answer);
     document.getElementById('qaEditModal').style.display = 'flex';
 }
 
@@ -465,7 +574,7 @@ function hideQAEditModal() {
 async function saveQA() {
     const id = document.getElementById('qaEditId').value;
     const question = document.getElementById('qaQuestionInput').value.trim();
-    const answer = document.getElementById('qaAnswerInput').value.trim();
+    const answer = getQAAnswerValue();
 
     if (!question) {
         alert('请输入问题');

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>邀请管理 - 超级管理员</title>
+    <link rel="stylesheet" href="css/quill.snow.css">
     <style>
         * {
             margin: 0;
@@ -393,7 +394,85 @@
             color: #666;
             font-size: 0.875rem;
             line-height: 1.5;
-            white-space: pre-wrap;
+        }
+
+        .qa-answer-editor .ql-container.ql-snow {
+            border: none;
+            background: transparent;
+            font-size: 0.875rem;
+        }
+
+        .qa-answer-editor .ql-editor {
+            padding: 0;
+            color: #666;
+        }
+
+        .qa-answer-editor .ql-editor p,
+        .qa-answer-editor .ql-editor ol,
+        .qa-answer-editor .ql-editor ul {
+            margin: 0 0 8px;
+        }
+
+        .qa-answer-editor .ql-editor p:last-child,
+        .qa-answer-editor .ql-editor ol:last-child,
+        .qa-answer-editor .ql-editor ul:last-child {
+            margin-bottom: 0;
+        }
+
+        .qa-answer-editor .ql-editor a {
+            color: #1a73e8;
+            text-decoration: none;
+        }
+
+        .qa-answer-editor .ql-editor a:hover {
+            text-decoration: underline;
+        }
+
+        .qa-editor {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .qa-editor:focus-within {
+            border-color: #4285f4;
+            box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.15);
+        }
+
+        .qa-editor .ql-toolbar.ql-snow {
+            border: none;
+            border-bottom: 1px solid #e0e0e0;
+            overflow-x: auto;
+        }
+
+        .qa-editor .ql-container.ql-snow {
+            border: none;
+            min-height: 260px;
+            max-height: 420px;
+            overflow-y: auto;
+        }
+
+        /* Q&A 编辑弹窗：整体更大、更适合编辑长内容 */
+        #qaEditModal .modal-content {
+            max-width: 860px;
+            width: min(860px, calc(100% - 40px));
+        }
+
+        #qaEditModal .modal-body {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 640px) {
+            #qaEditModal .modal-content {
+                width: calc(100% - 20px);
+            }
+
+            .qa-editor .ql-container.ql-snow {
+                min-height: 220px;
+                max-height: 55vh;
+            }
         }
 
         .qa-actions {
@@ -536,8 +615,9 @@
                     <input type="text" id="qaQuestionInput" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.95rem;" placeholder="请输入问题...">
                 </div>
                 <div class="form-group">
-                    <label for="qaAnswerInput" style="display: block; margin-bottom: 8px; font-weight: 600;">答案</label>
-                    <textarea id="qaAnswerInput" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.95rem; min-height: 120px; resize: vertical;" placeholder="请输入答案..."></textarea>
+                    <label for="qaAnswerInput" style="display: block; margin-bottom: 8px; font-weight: 600;">答案（富文本）</label>
+                    <div id="qaAnswerEditor" class="qa-editor" aria-label="答案富文本编辑器"></div>
+                    <textarea id="qaAnswerInput" style="display:none" aria-hidden="true"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
@@ -547,6 +627,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
     <script src="invite-admin.js"></script>
 </body>
 </html>

@@ -6,6 +6,7 @@
   <meta name="color-scheme" content="dark" />
   <meta name="theme-color" content="#070B18" />
   <title>Google 邀请申请</title>
+  <link rel="stylesheet" href="css/quill.snow.css" />
   <style>
     :root{
       --bg-0:#050711;
@@ -474,6 +475,46 @@
       line-height: 1.55;
     }
 
+    .qa-a .ql-container{
+      border: none;
+      font-size: 13px;
+    }
+    .qa-a .ql-editor{
+      padding: 0;
+      color: rgba(255,255,255,.72);
+    }
+    .qa-a .ql-editor p,
+    .qa-a .ql-editor ol,
+    .qa-a .ql-editor ul,
+    .qa-a .ql-editor pre{
+      margin: 0 0 10px;
+    }
+    .qa-a .ql-editor p:last-child,
+    .qa-a .ql-editor ol:last-child,
+    .qa-a .ql-editor ul:last-child,
+    .qa-a .ql-editor pre:last-child{
+      margin-bottom: 0;
+    }
+    .qa-a .ql-editor a{
+      color: rgba(110,231,255,.95);
+      text-decoration: none;
+    }
+    .qa-a .ql-editor a:hover{ text-decoration: underline; }
+    .qa-a .ql-editor code{
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      padding: 1px 6px;
+      border-radius: 8px;
+      font-size: 12px;
+    }
+    .qa-a .ql-editor pre{
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 14px;
+      padding: 10px 12px;
+      overflow:auto;
+    }
+
     .qa-skeleton{
       display:grid;
       gap: 10px;
@@ -492,6 +533,84 @@
     }
     @media (prefers-reduced-motion: reduce){
       .sk{ animation:none; }
+    }
+
+    /* 表单阅读解锁（15秒磨玻璃遮罩） */
+    .form-card{ position: relative; }
+    .form-lock{
+      position:absolute;
+      inset:0;
+      border-radius: inherit;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: clamp(14px, 2.2vw, 22px);
+      background: rgba(7, 11, 24, .42);
+      border: 1px solid rgba(255,255,255,.10);
+      opacity: 0;
+      pointer-events:none;
+      transition: opacity .22s ease;
+      z-index: 5;
+    }
+    @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+      .form-lock{
+        backdrop-filter: blur(18px) saturate(140%);
+        -webkit-backdrop-filter: blur(18px) saturate(140%);
+      }
+    }
+    .form-lock .lock-box{
+      width: min(440px, 100%);
+      text-align:center;
+      border-radius: 18px;
+      padding: 18px 18px 16px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      box-shadow: var(--shadow-soft);
+    }
+    .form-lock .lock-title{
+      font-weight: 900;
+      letter-spacing: .02em;
+      font-size: 16px;
+      color: rgba(255,255,255,.92);
+    }
+    .form-lock .lock-sub{
+      margin-top: 8px;
+      color: rgba(255,255,255,.74);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+    .form-lock .lock-timer{
+      margin-top: 12px;
+      display:inline-flex;
+      align-items:center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(110,231,255,.22);
+      background: rgba(110,231,255,.10);
+      color: rgba(110,231,255,.92);
+      font-weight: 900;
+      font-size: 13px;
+    }
+    .form-lock .lock-pill{
+      color: rgba(255,255,255,.78);
+      font-weight: 700;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+    }
+
+    .form-card.locked .panel{
+      pointer-events:none;
+      user-select:none;
+      filter: blur(1.8px) saturate(0.92);
+      opacity: .78;
+    }
+    .form-card.locked .form-lock{
+      opacity: 1;
+      pointer-events: auto;
     }
 
     /* 右侧表单 */
@@ -808,7 +927,7 @@
       </section>
 
       <!-- 右侧：表单 -->
-      <section class="glass" aria-label="申请表单">
+      <section class="glass form-card locked" id="applyCard" aria-label="申请表单">
         <div class="panel">
           <div class="form-title">
             <h2>提交申请</h2>
@@ -868,6 +987,17 @@
             <div id="liveRegion" class="sr-only" aria-live="polite"></div>
           </form>
         </div>
+
+        <div id="applyLock" class="form-lock" role="status" aria-live="polite">
+          <div class="lock-box">
+            <div class="lock-title">请先阅读完所有 Q&A</div>
+            <div class="lock-sub">这会减少您绝大数问题，倒计时结束后才能填写订单号与邮箱。</div>
+            <div class="lock-timer">
+              <span class="lock-pill"><span id="lockSeconds">15</span>s 倒计时</span>
+              <span>阅读完成后再提交</span>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- 第三部分：邮箱查询订单 -->
@@ -922,6 +1052,7 @@
     <button class="t-close" type="button" id="toastClose" aria-label="关闭提示">✕</button>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
   <script>
     const API = {
       qaPublic: "/api/invite/qa/public",
@@ -934,6 +1065,64 @@
     const state = {
       toastTimer: null
     };
+
+    function looksLikeHtml(str) {
+      return typeof str === "string" && /<\/?[a-z][\s\S]*>/i.test(str);
+    }
+
+    function renderRichTextInto(host, value) {
+      const content = value ? String(value) : "";
+
+      if (!window.Quill) {
+        host.textContent = content;
+        host.style.whiteSpace = "pre-wrap";
+        return;
+      }
+
+      const quill = new Quill(host, {
+        theme: "bubble",
+        readOnly: true,
+        modules: { toolbar: false }
+      });
+
+      if (looksLikeHtml(content)) {
+        quill.setContents(quill.clipboard.convert(content));
+      } else {
+        quill.setText(content);
+      }
+    }
+
+    function initApplyReadLock(seconds = 15) {
+      const card = el("applyCard");
+      const lock = el("applyLock");
+      const sec = el("lockSeconds");
+
+      if (!card || !lock || !sec) return;
+
+      let remaining = Math.max(0, Number(seconds) || 0);
+      sec.textContent = remaining;
+      card.classList.add("locked");
+      lock.removeAttribute("aria-hidden");
+
+      if (remaining === 0) {
+        card.classList.remove("locked");
+        lock.setAttribute("aria-hidden", "true");
+        return;
+      }
+
+      const timer = window.setInterval(() => {
+        remaining -= 1;
+        if (remaining <= 0) {
+          window.clearInterval(timer);
+          sec.textContent = "0";
+          card.classList.remove("locked");
+          lock.setAttribute("aria-hidden", "true");
+          setLive("已解锁：现在可以填写订单号与 Gmail 邮箱。");
+        } else {
+          sec.textContent = remaining;
+        }
+      }, 1000);
+    }
 
     function setLive(message) {
       el("liveRegion").textContent = message || "";
@@ -1045,7 +1234,10 @@
 
           const a = document.createElement("div");
           a.className = "qa-a";
-          a.textContent = (qa && qa.answer) ? qa.answer : "";
+
+          const aHost = document.createElement("div");
+          a.appendChild(aHost);
+          renderRichTextInto(aHost, (qa && qa.answer) ? qa.answer : "");
 
           details.appendChild(summary);
           details.appendChild(a);
@@ -1210,6 +1402,7 @@
     }
 
     document.addEventListener("DOMContentLoaded", () => {
+      initApplyReadLock(15);
       loadQAList();
 
       el("reloadQA").addEventListener("click", () => {
