@@ -398,6 +398,9 @@
       margin-top: 18px;
       border-top: 1px solid rgba(255,255,255,.10);
       padding-top: 18px;
+      width: 100%;
+      max-width: 100%;
+      overflow: hidden;
     }
     .qa-head{
       display:flex;
@@ -428,13 +431,18 @@
 
     .qa-list{
       display:grid;
+      grid-template-columns: 1fr;
       gap: 10px;
+      width: 100%;
     }
     .qa-item{
       border-radius: var(--radius-md);
       border: 1px solid rgba(255,255,255,.12);
       background: rgba(255,255,255,.05);
       overflow:hidden;
+      width: 100%;
+      min-width: 0;
+      display: block;
     }
     .qa-item summary{
       list-style:none;
@@ -446,6 +454,8 @@
       color: rgba(255,255,255,.88);
       outline:none;
       user-select:none;
+      width: 100%;
+      box-sizing: border-box;
     }
     .qa-item summary::-webkit-details-marker{ display:none; }
     .qa-q{
@@ -473,6 +483,30 @@
       color: rgba(255,255,255,.68);
       font-size: 13px;
       line-height: 1.55;
+      width: 100%;
+      max-width: 100%;
+      box-sizing: border-box;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      display: block;
+    }
+    .qa-a > div{
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
+    }
+    .qa-a p{
+      margin: 0 0 10px;
+      width: 100%;
+      max-width: 100%;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    .qa-a p:last-child{
+      margin-bottom: 0;
     }
 
     .qa-a .ql-container{
@@ -1073,22 +1107,17 @@
     function renderRichTextInto(host, value) {
       const content = value ? String(value) : "";
 
-      if (!window.Quill) {
-        host.textContent = content;
-        host.style.whiteSpace = "pre-wrap";
-        return;
-      }
-
-      const quill = new Quill(host, {
-        theme: "bubble",
-        readOnly: true,
-        modules: { toolbar: false }
-      });
-
+      // 检测内容是否为 HTML
       if (looksLikeHtml(content)) {
-        quill.setContents(quill.clipboard.convert(content));
+        // 对于 HTML 内容，直接使用 innerHTML 渲染（更可靠地保留换行）
+        host.innerHTML = content;
       } else {
-        quill.setText(content);
+        // 对于纯文本，将 \n 转换为 <br> 并使用 innerHTML
+        host.innerHTML = content
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/\n/g, '<br>');
       }
     }
 
