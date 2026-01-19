@@ -1,0 +1,595 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="theme-color" content="#070B18" />
+  <title>谷歌在线邀请申请</title>
+  <link rel="stylesheet" href="css/quill.snow.css" />
+  <style>
+    :root{
+      --bg-0:#050711;--bg-1:#070B18;
+      --ink:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.70);
+      --faint:rgba(255,255,255,.52);
+      --stroke:rgba(255,255,255,.14);
+      --shadow:0 24px 80px rgba(0,0,0,.55);
+      --shadow-soft:0 14px 42px rgba(0,0,0,.35);
+      --radius-xl:28px;--radius-lg:20px;--radius-md:14px;
+      --accent-a:#6EE7FF;--accent-b:#A78BFA;--accent-c:#34D399;
+      --danger:#FB7185;--warning:#FBBF24;--ok:#22C55E;
+      --max:1120px;
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      color:var(--ink);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height:1.5;
+      background:
+        radial-gradient(1200px 700px at 15% 10%, rgba(167,139,250,.22), transparent 60%),
+        radial-gradient(1000px 700px at 90% 25%, rgba(110,231,255,.18), transparent 62%),
+        radial-gradient(900px 700px at 65% 90%, rgba(52,211,153,.12), transparent 58%),
+        linear-gradient(180deg, var(--bg-1), var(--bg-0));
+      overflow-x:hidden;
+    }
+    .bg-grid{
+      position:fixed;inset:-2px;pointer-events:none;opacity:.32;
+      background:
+        linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px) 0 0 / 46px 46px,
+        linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px) 0 0 / 46px 46px;
+      mask-image: radial-gradient(circle at 30% 30%, rgba(0,0,0,1), rgba(0,0,0,.25) 55%, transparent 78%);
+      filter: blur(.2px);
+    }
+    .bg-orb{
+      position:fixed;width:540px;height:540px;border-radius:999px;
+      filter: blur(26px);opacity:.32;pointer-events:none;transform: translateZ(0);
+      background: radial-gradient(circle at 30% 30%, rgba(110,231,255,.65), transparent 58%);
+      left:-220px;top:14vh;animation: floatA 14s ease-in-out infinite;
+    }
+    .bg-orb.orb-b{
+      width:620px;height:620px;left:62vw;top:54vh;opacity:.22;
+      background: radial-gradient(circle at 40% 40%, rgba(167,139,250,.7), transparent 58%);
+      animation: floatB 18s ease-in-out infinite;
+    }
+    @keyframes floatA{0%,100%{transform:translate3d(0,0,0) scale(1)}45%{transform:translate3d(36px,-22px,0) scale(1.06)}75%{transform:translate3d(14px,18px,0) scale(.98)}}
+    @keyframes floatB{0%,100%{transform:translate3d(0,0,0) scale(1)}35%{transform:translate3d(-28px,10px,0) scale(1.04)}70%{transform:translate3d(-12px,-26px,0) scale(.99)}}
+    @media (prefers-reduced-motion: reduce){ .bg-orb{ animation:none; } }
+
+    .wrap{min-height:100%;display:flex;align-items:flex-start;justify-content:center;padding: clamp(22px, 5vh, 56px) 18px 56px;position:relative;}
+    .shell{width:min(var(--max),100%);display:grid;grid-template-columns:1fr;gap: clamp(18px, 2.6vw, 34px);align-items:start;}
+
+    .glass{
+      background: linear-gradient(180deg, rgba(255,255,255,.11), rgba(255,255,255,.06));
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-soft);
+      position:relative;overflow:hidden;
+    }
+    @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))){
+      .glass{
+        background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.055));
+        backdrop-filter: blur(22px) saturate(140%);
+        -webkit-backdrop-filter: blur(22px) saturate(140%);
+      }
+    }
+    .panel{ position:relative; padding: clamp(22px, 2.4vw, 34px); }
+
+    .brand{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;}
+    .chip{display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:rgba(255,255,255,.82);font-size:13px;letter-spacing:.3px;user-select:none;white-space:nowrap;}
+    .chip-dot{width:10px;height:10px;border-radius:999px;background: radial-gradient(circle at 30% 30%, var(--accent-a), rgba(110,231,255,.25));box-shadow: 0 0 0 6px rgba(110,231,255,.08);}
+    .ghost-link{color: rgba(255,255,255,.78);text-decoration:none;border-bottom: 1px dashed rgba(255,255,255,.26);}
+    .ghost-link:hover{color:rgba(255,255,255,.92);border-bottom-color:rgba(255,255,255,.46);}
+
+    h1{margin:0 0 10px;font-size: clamp(30px, 3.4vw, 42px);line-height:1.1;}
+    .sub{margin:0;color:var(--muted);font-size:15px;}
+    .meta{margin-top:18px;display:grid;grid-template-columns: repeat(2, minmax(0,1fr));gap:12px;}
+    .meta-card{background: rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius: var(--radius-lg);padding:14px;}
+    .meta-card b{display:block;font-size:13px;color:rgba(255,255,255,.84);margin-bottom:6px;}
+    .meta-card span{color:var(--muted);font-size:13px;}
+
+    .card-title{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;}
+    .card-title h2{margin:0;font-size:18px;letter-spacing:.2px;}
+    .badge{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:rgba(255,255,255,.78);font-size:12px;user-select:none;}
+    .badge i{width:8px;height:8px;border-radius:999px;background: radial-gradient(circle at 30% 30%, var(--accent-c), rgba(52,211,153,.2));box-shadow: 0 0 0 5px rgba(52,211,153,.08);}
+
+    .form{margin-top:10px;display:grid;gap:14px;}
+    .field{position:relative;}
+    .input{width:100%;padding:28px 14px 12px;border-radius: var(--radius-md);border:1px solid rgba(255,255,255,.16);background:rgba(5,7,17,.55);color:var(--ink);outline:none;font-size:14px;transition: border-color .15s ease, box-shadow .15s ease;}
+    .input::placeholder{color:transparent;}
+    .input:focus{border-color: rgba(110,231,255,.55);box-shadow: 0 0 0 4px rgba(110,231,255,.16);}
+    .label{position:absolute;left:12px;top:18px;font-size:13px;color:rgba(255,255,255,.72);pointer-events:none;transform-origin:left top;transition: transform .15s ease, color .15s ease, top .15s ease;}
+    .input:focus + .label,
+    .input:not(:placeholder-shown) + .label{top:6px;transform:scale(.80);color:rgba(110,231,255,.86);}
+    .req{color: rgba(251,113,133,.95);margin-left:4px;}
+    .hint{margin-top:8px;font-size:12px;color:var(--faint);}
+    .error{margin-top:8px;font-size:12px;color: rgba(251,113,133,.95);min-height:16px;}
+    .field.invalid .input{border-color: rgba(251,113,133,.58);box-shadow: 0 0 0 4px rgba(251,113,133,.12);}
+    .field.valid .input{border-color: rgba(34,197,94,.55);box-shadow: 0 0 0 4px rgba(34,197,94,.12);}
+
+    .actions{margin-top:4px;display:flex;justify-content:flex-end;}
+    .btn{appearance:none;border:1px solid rgba(255,255,255,.18);background: linear-gradient(135deg, rgba(110,231,255,.20), rgba(167,139,250,.18));color: rgba(255,255,255,.92);border-radius: 999px;padding:12px 16px;font-weight:700;letter-spacing:.2px;cursor:pointer;transition: transform .15s ease, filter .15s ease, border-color .15s ease;display:inline-flex;align-items:center;gap:10px;user-select:none;}
+    .btn:hover{transform: translateY(-1px);filter: brightness(1.03);border-color: rgba(255,255,255,.28);}
+    .btn:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+    .btn.secondary{background: rgba(255,255,255,.06);border-color: rgba(255,255,255,.14);font-weight:600;}
+
+    .spinner{width:16px;height:16px;border-radius:999px;border:2px solid rgba(255,255,255,.28);border-top-color: rgba(255,255,255,.90);animation: spin 1s linear infinite;display:none;}
+    .btn.loading .spinner{display:inline-block;}
+    @keyframes spin{to{transform: rotate(360deg);}}
+
+    .lock{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background: rgba(5,7,17,.72);border:1px solid rgba(255,255,255,.10);border-radius: var(--radius-xl);z-index:20;}
+    .lock[aria-hidden="true"]{display:none;}
+    .lock-card{width:min(520px, 100%);border:1px solid rgba(255,255,255,.14);background: rgba(255,255,255,.06);border-radius: var(--radius-lg);padding:18px;text-align:left;}
+    .lock-card b{display:block;font-size:14px;margin-bottom:8px;}
+    .lock-card p{margin:0;color:var(--muted);font-size:13px;}
+    .lock-time{display:flex;align-items:center;gap:10px;margin-top:12px;color:rgba(255,255,255,.86);font-weight:800;}
+    .lock-pill{padding:8px 12px;border-radius:999px;background: rgba(110,231,255,.12);border:1px solid rgba(110,231,255,.24);}
+
+    .qa-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:22px;}
+    .qa-head h3{margin:0;font-size:15px;color: rgba(255,255,255,.86);}
+    .qa-list{margin-top:12px;display:grid;gap:10px;}
+    .qa-item{border:1px solid rgba(255,255,255,.12);background: rgba(255,255,255,.05);border-radius: var(--radius-lg);overflow:hidden;}
+    .qa-item summary{list-style:none;cursor:pointer;padding:12px 14px;display:flex;align-items:flex-start;gap:10px;color: rgba(255,255,255,.88);font-weight:700;}
+    .qa-item summary::-webkit-details-marker{display:none;}
+    .qa-q{width:22px;height:22px;flex:0 0 22px;border-radius:8px;display:flex;align-items:center;justify-content:center;background: rgba(110,231,255,.14);border:1px solid rgba(110,231,255,.24);font-size:12px;}
+    .qa-a{padding:0 14px 12px;color: rgba(255,255,255,.72);font-size:13px;line-height:1.7;}
+    .qa-a a{color: rgba(110,231,255,.88);text-decoration:none;}
+    .qa-a a:hover{text-decoration:underline;}
+    .qa-skeleton{display:grid;gap:10px;}
+    .skeleton-line{height:14px;border-radius:10px;background: linear-gradient(90deg, rgba(255,255,255,.06), rgba(255,255,255,.12), rgba(255,255,255,.06));background-size:200% 100%;animation: shimmer 1.2s ease-in-out infinite;}
+    @keyframes shimmer{0%{background-position:0% 0%}100%{background-position:200% 0%}}
+
+    .query-result{margin-top:14px;border-radius: var(--radius-lg);border:1px solid rgba(255,255,255,.12);background: rgba(255,255,255,.06);padding:14px;font-size:13px;color: rgba(255,255,255,.80);}
+    .query-result.error{border-color: rgba(251,113,133,.25);background: rgba(251,113,133,.08);}
+    .query-result.success{border-color: rgba(34,197,94,.22);background: rgba(34,197,94,.08);}
+    .result-row{display:flex;gap:10px;justify-content:space-between;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,.12);}
+    .result-row:last-child{border-bottom:none;}
+    .result-label{color: rgba(255,255,255,.60);}
+    .result-value{color: rgba(255,255,255,.88);text-align:right;overflow-wrap:anywhere;}
+
+    .toast{position:fixed;right:18px;bottom:18px;width:min(420px, calc(100% - 36px));border-radius:18px;border:1px solid rgba(255,255,255,.14);background: rgba(10,14,30,.78);box-shadow: var(--shadow);padding:14px;display:grid;grid-template-columns:34px 1fr 34px;gap:12px;align-items:start;opacity:0;transform: translateY(10px);pointer-events:none;transition: opacity .2s ease, transform .2s ease;z-index:9999;}
+    .toast.show{opacity:1;transform: translateY(0);pointer-events:auto;}
+    .t-ico{width:34px;height:34px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:900;background: rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);color: rgba(255,255,255,.86);}
+    .toast.success .t-ico{background: rgba(34,197,94,.14);border-color: rgba(34,197,94,.26);}
+    .toast.error .t-ico{background: rgba(251,113,133,.14);border-color: rgba(251,113,133,.26);}
+    .toast.warning .t-ico{background: rgba(251,191,36,.14);border-color: rgba(251,191,36,.26);}
+    .t-title{font-weight:800;font-size:14px;}
+    .t-msg{margin-top:2px;color: rgba(255,255,255,.74);font-size:13px;}
+    .t-close{appearance:none;border:none;background:transparent;color: rgba(255,255,255,.70);cursor:pointer;width:34px;height:34px;border-radius:12px;}
+    .t-close:hover{background: rgba(255,255,255,.06);color: rgba(255,255,255,.92);}
+
+    .sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
+  </style>
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-orb" aria-hidden="true"></div>
+  <div class="bg-orb orb-b" aria-hidden="true"></div>
+
+  <div class="sr-only" id="liveRegion" aria-live="polite" aria-atomic="true"></div>
+
+  <main class="wrap">
+    <div class="shell">
+      <section class="glass" aria-label="页面介绍与常见问题">
+        <div class="panel">
+          <div class="brand">
+            <div class="chip" aria-label="系统状态">
+              <span class="chip-dot" aria-hidden="true"></span>
+              <span>在线邀请申请通道</span>
+              <small style="opacity:.86">公开提交</small>
+            </div>
+          </div>
+
+          <h1>谷歌在线邀请申请</h1>
+          <p class="sub">输入订单号与验证地址（URL）提交申请，我们将按队列处理。</p>
+
+          <div class="meta" role="list" aria-label="关键信息">
+            <div class="meta-card" role="listitem">
+              <b>处理时效</b>
+              <span>通常 24 小时内</span>
+            </div>
+            <div class="meta-card" role="listitem">
+              <b>验证地址</b>
+              <span>按照常见问题中的提示填写</span>
+            </div>
+          </div>
+
+          <div class="qa-head">
+            <h3>常见问题</h3>
+            <button id="reloadQA" class="btn secondary" type="button">
+              <span class="spinner" aria-hidden="true"></span>
+              <span>刷新</span>
+            </button>
+          </div>
+          <div id="qaSkeleton" class="qa-skeleton" aria-hidden="true">
+            <div class="skeleton-line" style="width: 92%;"></div>
+            <div class="skeleton-line" style="width: 86%;"></div>
+            <div class="skeleton-line" style="width: 90%;"></div>
+          </div>
+          <div id="qaEmpty" class="hint" style="display:none;">暂无公开 Q&A</div>
+          <div id="qaList" class="qa-list" aria-busy="false"></div>
+        </div>
+      </section>
+
+      <div style="display:grid; gap: clamp(18px, 2.6vw, 24px);">
+        <section class="glass" aria-label="在线邀请申请">
+          <div class="panel" id="applyCard">
+            <div id="applyLock" class="lock" aria-hidden="true">
+              <div class="lock-card">
+                <b>请先阅读常见问题（防误操作）</b>
+                <p>倒计时结束后自动解锁表单。</p>
+                <div class="lock-time">
+                  <span class="lock-pill"><span id="lockSeconds">15</span>s</span>
+                  <span style="color:rgba(255,255,255,.72); font-size: 13px;">后可填写</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-title">
+              <h2>提交申请</h2>
+              <div class="badge" aria-label="提示"><i aria-hidden="true"></i><span>15 秒解锁</span></div>
+            </div>
+
+            <form id="applyForm" class="form" novalidate>
+              <div class="field" id="fieldOrder">
+                <input class="input" id="orderNumber" name="orderNumber" type="text" inputmode="text" autocomplete="off" placeholder="订单号" required />
+                <label class="label" for="orderNumber">订单号<span class="req">*</span></label>
+                <div class="hint">请输入购买服务时获得的订单号。</div>
+                <div class="error" role="alert"></div>
+              </div>
+
+              <div class="field" id="fieldVerify">
+                <input class="input" id="verifyAddress" name="verifyAddress" type="url" inputmode="url" autocomplete="off" placeholder="验证地址（URL）" required />
+                <label class="label" for="verifyAddress">验证地址<span class="req">*</span></label>
+                <div class="hint">示例：<span style="color:rgba(110,231,255,.88)">https://services.sheerid.com/verify/27a8c14f5f17a83b745e3f83/?verificationId=696decdf4b2df03xaf601a2b</span></div>
+                <div class="error" role="alert"></div>
+              </div>
+
+              <div class="actions">
+                <button id="submitBtn" type="submit" class="btn">
+                  <span class="spinner" aria-hidden="true"></span>
+                  <span>提交申请</span>
+                </button>
+              </div>
+
+              <div class="hint">提交即表示你同意我们仅将订单号与验证地址用于在线邀请处理与必要的沟通通知。</div>
+            </form>
+          </div>
+        </section>
+
+        <section class="glass" aria-label="按订单号查询">
+          <div class="panel">
+            <div class="card-title">
+              <h2>查询状态</h2>
+              <div class="badge" aria-label="提示"><i aria-hidden="true"></i><span>按订单号查询</span></div>
+            </div>
+
+            <p class="hint" style="margin: 0 0 10px;">如已提交过申请，可通过订单号查询处理状态与驳回原因（如有）。</p>
+
+            <div class="field" id="fieldQueryOrder">
+              <input class="input" id="queryOrderNumber" type="text" inputmode="text" autocomplete="off" placeholder="订单号" />
+              <label class="label" for="queryOrderNumber">订单号</label>
+              <div class="hint">请输入提交申请时使用的订单号。</div>
+              <div class="error" role="alert"></div>
+            </div>
+
+            <div class="actions" style="margin-top: 10px;">
+              <button id="queryBtn" type="button" class="btn secondary">
+                <span class="spinner" aria-hidden="true"></span>
+                <span>查询</span>
+              </button>
+            </div>
+
+            <div id="queryResult" class="query-result" style="display:none;"></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true">
+    <div class="t-ico" id="toastIco" aria-hidden="true">i</div>
+    <div class="t-body">
+      <div class="t-title" id="toastTitle">提示</div>
+      <div class="t-msg" id="toastMsg"></div>
+    </div>
+    <button class="t-close" type="button" id="toastClose" aria-label="关闭提示">✕</button>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+  <script>
+    const API = {
+      qaPublic: "/api/invite/qa/online/public",
+      apply: "/api/online-invite/apply",
+      queryByOrder: "/api/online-invite/query"
+    };
+
+    const el = (id) => document.getElementById(id);
+    const state = { toastTimer: null };
+
+    function looksLikeHtml(str) {
+      return typeof str === "string" && /<\/?[a-z][\s\S]*>/i.test(str);
+    }
+
+    function renderRichTextInto(host, value) {
+      const content = value ? String(value) : "";
+      if (looksLikeHtml(content)) host.innerHTML = content;
+      else {
+        host.innerHTML = content
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\n/g, "<br>");
+      }
+    }
+
+    function setLive(message) {
+      el("liveRegion").textContent = message || "";
+    }
+
+    function initApplyReadLock(seconds = 15) {
+      const lock = el("applyLock");
+      const sec = el("lockSeconds");
+      if (!lock || !sec) return;
+
+      let remaining = Math.max(0, Number(seconds) || 0);
+      sec.textContent = remaining;
+      lock.removeAttribute("aria-hidden");
+
+      if (remaining === 0) {
+        lock.setAttribute("aria-hidden", "true");
+        return;
+      }
+
+      const timer = window.setInterval(() => {
+        remaining -= 1;
+        if (remaining <= 0) {
+          window.clearInterval(timer);
+          sec.textContent = "0";
+          lock.setAttribute("aria-hidden", "true");
+          setLive("已解锁：现在可以填写订单号与验证地址。");
+        } else {
+          sec.textContent = remaining;
+        }
+      }, 1000);
+    }
+
+    function setFieldState(fieldEl, isValid, message) {
+      fieldEl.classList.remove("valid", "invalid");
+      if (typeof isValid !== "boolean") return;
+      fieldEl.classList.add(isValid ? "valid" : "invalid");
+      const errorEl = fieldEl.querySelector(".error");
+      if (errorEl) errorEl.textContent = isValid ? "" : (message || "请检查输入");
+    }
+
+    function validateOrder(inputId, fieldId) {
+      const field = el(fieldId);
+      const value = el(inputId).value.trim();
+      if (!value) { setFieldState(field, false, "请输入订单号"); return false; }
+      setFieldState(field, true); return true;
+    }
+
+    function validateVerifyAddress() {
+      const field = el("fieldVerify");
+      const value = el("verifyAddress").value.trim();
+      if (!value) { setFieldState(field, false, "请输入验证地址"); return false; }
+      if (!/^https?:\/\//i.test(value)) { setFieldState(field, false, "验证地址必须以 http:// 或 https:// 开头"); return false; }
+      setFieldState(field, true); return true;
+    }
+
+    function toast(type, title, message, options = {}) {
+      const node = el("toast");
+      const ico = el("toastIco");
+      node.classList.remove("success", "error", "warning");
+      node.classList.add(type || "success");
+      ico.textContent = type === "success" ? "✓" : (type === "error" ? "!" : "i");
+      el("toastTitle").textContent = title || "提示";
+      el("toastMsg").textContent = message || "";
+
+      node.classList.add("show");
+      setLive([title, message].filter(Boolean).join("："));
+
+      if (state.toastTimer) clearTimeout(state.toastTimer);
+      const duration = typeof options.duration === "number" ? options.duration : 4200;
+      state.toastTimer = setTimeout(() => node.classList.remove("show"), duration);
+    }
+
+    function closeToast() {
+      el("toast").classList.remove("show");
+      if (state.toastTimer) clearTimeout(state.toastTimer);
+      state.toastTimer = null;
+    }
+
+    function setSubmitting(isSubmitting) {
+      const btn = el("submitBtn");
+      btn.disabled = isSubmitting;
+      btn.classList.toggle("loading", isSubmitting);
+    }
+
+    function setQueryLoading(isLoading) {
+      const btn = el("queryBtn");
+      btn.disabled = isLoading;
+      btn.classList.toggle("loading", isLoading);
+    }
+
+    function showQueryResult(type, content) {
+      const resultEl = el("queryResult");
+      resultEl.className = "query-result " + type;
+      resultEl.innerHTML = content;
+      resultEl.style.display = "block";
+    }
+
+    function hideQueryResult() {
+      el("queryResult").style.display = "none";
+    }
+
+    async function loadQAList() {
+      el("qaEmpty").style.display = "none";
+      el("qaSkeleton").style.display = "grid";
+      el("qaList").innerHTML = "";
+      el("qaList").setAttribute("aria-busy", "true");
+
+      try {
+        const res = await fetch(API.qaPublic, { method: "GET" });
+        const data = await res.json().catch(() => ({}));
+        const list = (data && data.success && Array.isArray(data.data)) ? data.data : [];
+
+        if (list.length === 0) { el("qaEmpty").style.display = "block"; return; }
+
+        const frag = document.createDocumentFragment();
+        list.forEach((qa) => {
+          const details = document.createElement("details");
+          details.className = "qa-item";
+          details.open = true;
+
+          const summary = document.createElement("summary");
+          const qIcon = document.createElement("span");
+          qIcon.className = "qa-q";
+          qIcon.textContent = "Q";
+          qIcon.setAttribute("aria-hidden", "true");
+
+          const qText = document.createElement("span");
+          qText.textContent = (qa && qa.question) ? qa.question : "（空）";
+          summary.appendChild(qIcon);
+          summary.appendChild(qText);
+
+          const a = document.createElement("div");
+          a.className = "qa-a";
+          const aHost = document.createElement("div");
+          a.appendChild(aHost);
+          renderRichTextInto(aHost, (qa && qa.answer) ? qa.answer : "");
+
+          details.appendChild(summary);
+          details.appendChild(a);
+          frag.appendChild(details);
+        });
+        el("qaList").appendChild(frag);
+      } catch (e) {
+        el("qaEmpty").style.display = "block";
+        el("qaEmpty").textContent = "加载失败，请稍后重试。";
+      } finally {
+        el("qaSkeleton").style.display = "none";
+        el("qaList").setAttribute("aria-busy", "false");
+      }
+    }
+
+    async function handleSubmit(event) {
+      event.preventDefault();
+      closeToast();
+
+      const okOrder = validateOrder("orderNumber", "fieldOrder");
+      const okVerify = validateVerifyAddress();
+      if (!okOrder || !okVerify) { toast("warning", "信息未填写完整", "请检查订单号与验证地址后再提交。"); return false; }
+
+      const orderNumber = el("orderNumber").value.trim();
+      const verifyAddress = el("verifyAddress").value.trim();
+
+      setSubmitting(true);
+      try {
+        const res = await fetch(API.apply, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderNumber, verifyAddress })
+        });
+        const result = await res.json().catch(() => ({}));
+        if (result && result.success) {
+          toast("success", "申请提交成功", result.message || "我们将尽快处理你的申请。");
+          el("applyForm").reset();
+          setFieldState(el("fieldOrder"));
+          setFieldState(el("fieldVerify"));
+        } else {
+          toast("error", "提交失败", (result && result.message) ? result.message : "提交失败，请稍后重试。");
+        }
+      } catch (e) {
+        toast("error", "网络错误", "请检查网络连接后重试。");
+      } finally {
+        setSubmitting(false);
+      }
+      return false;
+    }
+
+    async function handleQuery() {
+      const orderNumber = el("queryOrderNumber").value.trim();
+      if (!orderNumber) { toast("warning", "请输入订单号", "请先输入要查询的订单号。"); return; }
+
+      hideQueryResult();
+      setQueryLoading(true);
+
+      try {
+        const res = await fetch(`${API.queryByOrder}?orderNumber=${encodeURIComponent(orderNumber)}`, { method: "GET" });
+        const result = await res.json().catch(() => ({}));
+
+        if (result && result.success && result.data) {
+          const data = result.data;
+          const verifyAddress = data.verifyAddress || "-";
+          const statusDesc = data.statusDescription || data.status || "-";
+
+          let html = "";
+          html += `<div class="result-row"><span class="result-label">订单号：</span><span class="result-value">${escapeHtml(data.orderNumber || "-")}</span></div>`;
+          html += `<div class="result-row"><span class="result-label">状态：</span><span class="result-value">${escapeHtml(statusDesc)}</span></div>`;
+          html += `<div class="result-row"><span class="result-label">验证地址：</span><span class="result-value">${renderLinkOrText(verifyAddress)}</span></div>`;
+          html += `<div class="result-row"><span class="result-label">提交时间：</span><span class="result-value">${escapeHtml(data.submitTime || "-")}</span></div>`;
+          html += `<div class="result-row"><span class="result-label">处理时间：</span><span class="result-value">${escapeHtml(data.processTime || "-")}</span></div>`;
+
+          if (data.rejectReason) {
+            html += `<div class="result-row"><span class="result-label">驳回原因：</span><span class="result-value">${escapeHtml(data.rejectReason)}</span></div>`;
+          }
+          if (data.canModify) {
+            html += `<div style="margin-top:10px; color: rgba(255,255,255,.74);">提示：当前状态允许重新提交（可在上方表单中重新填写并提交）。</div>`;
+          }
+
+          showQueryResult("success", html);
+        } else {
+          showQueryResult("error", escapeHtml((result && result.message) ? result.message : "未找到对应的申请记录"));
+        }
+      } catch (e) {
+        showQueryResult("error", "查询失败，请检查网络连接后重试。");
+      } finally {
+        setQueryLoading(false);
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return "";
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function renderLinkOrText(value) {
+      const v = String(value || "").trim();
+      if (!v || v === "-") return escapeHtml(v || "-");
+      if (/^https?:\/\//i.test(v)) {
+        const safe = escapeHtml(v);
+        return `<a href="${safe}" target="_blank" rel="noopener noreferrer">${safe}</a>`;
+      }
+      return escapeHtml(v);
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      initApplyReadLock(15);
+      loadQAList();
+
+      el("reloadQA").addEventListener("click", () => {
+        loadQAList();
+        toast("success", "已刷新", "已重新加载常见问题。", { duration: 2400 });
+      });
+
+      el("toastClose").addEventListener("click", closeToast);
+
+      el("orderNumber").addEventListener("blur", () => validateOrder("orderNumber", "fieldOrder"));
+      el("verifyAddress").addEventListener("blur", validateVerifyAddress);
+      el("applyForm").addEventListener("submit", handleSubmit);
+
+      el("queryBtn").addEventListener("click", handleQuery);
+      el("queryOrderNumber").addEventListener("blur", () => validateOrder("queryOrderNumber", "fieldQueryOrder"));
+      el("queryOrderNumber").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); handleQuery(); }
+      });
+    });
+  </script>
+</body>
+</html>
+

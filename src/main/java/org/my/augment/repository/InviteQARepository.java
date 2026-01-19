@@ -39,4 +39,31 @@ public interface InviteQARepository extends JpaRepository<InviteQA, Long> {
      */
     @Query("SELECT COALESCE(MAX(q.sortOrder), 0) FROM InviteQA q")
     Integer getMaxSortOrder();
+
+    /**
+     * 根据类型获取最大排序权重
+     *
+     * @param qaType Q&A类型
+     * @return 最大排序权重
+     */
+    @Query("SELECT COALESCE(MAX(q.sortOrder), 0) FROM InviteQA q WHERE q.qaType = ?1")
+    Integer getMaxSortOrderByType(String qaType);
+
+    /**
+     * 根据类型获取所有启用的Q&A，按排序权重升序
+     *
+     * @param qaType Q&A类型
+     * @return Q&A列表
+     */
+    @Query("SELECT q FROM InviteQA q WHERE q.enabled = true AND q.qaType = ?1 ORDER BY q.sortOrder ASC, q.createTime ASC")
+    List<InviteQA> findAllEnabledByTypeOrderBySortOrder(String qaType);
+
+    /**
+     * 根据类型获取所有Q&A，按排序权重升序（管理端使用）
+     *
+     * @param qaType Q&A类型
+     * @return Q&A列表
+     */
+    @Query("SELECT q FROM InviteQA q WHERE q.qaType = ?1 ORDER BY q.sortOrder ASC, q.createTime ASC")
+    List<InviteQA> findAllByTypeOrderBySortOrder(String qaType);
 }

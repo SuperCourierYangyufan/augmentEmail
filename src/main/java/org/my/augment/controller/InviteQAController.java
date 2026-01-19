@@ -271,4 +271,79 @@ public class InviteQAController {
             return ResponseEntity.status(500).body(errorResponse);
         }
     }
+
+    // ==================== 在线邀请 Q&A 接口 ====================
+
+    /**
+     * 获取在线邀请启用的Q&A列表（前台公开接口）
+     *
+     * @return Q&A列表
+     */
+    @GetMapping("/online/public")
+    public ResponseEntity<Map<String, Object>> getOnlinePublicQAList() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            List<Map<String, Object>> qaList = inviteQAService.getEnabledQAListByType("ONLINE");
+            response.put("success", true);
+            response.put("data", qaList);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("获取在线邀请Q&A列表失败: {}", e.getMessage(), e);
+            response.put("success", false);
+            response.put("message", "获取失败: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    /**
+     * 获取在线邀请所有Q&A列表（管理端）
+     * 需要超级管理员权限
+     *
+     * @return Q&A列表
+     */
+    @GetMapping("/online/list")
+    public ResponseEntity<Map<String, Object>> getOnlineAllQAList() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            List<Map<String, Object>> qaList = inviteQAService.getAllQAListByType("ONLINE");
+            response.put("success", true);
+            response.put("data", qaList);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("获取在线邀请Q&A列表失败: {}", e.getMessage(), e);
+            response.put("success", false);
+            response.put("message", "获取失败: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    /**
+     * 添加在线邀请Q&A（管理端）
+     * 需要超级管理员权限
+     *
+     * @param requestBody 请求体
+     * @return 操作结果
+     */
+    @PostMapping("/online/add")
+    public ResponseEntity<Map<String, Object>> addOnlineQA(@RequestBody Map<String, String> requestBody) {
+        String question = requestBody.get("question");
+        String answer = requestBody.get("answer");
+
+        logger.info("添加在线邀请Q&A，问题: {}", question);
+
+        try {
+            Map<String, Object> result = inviteQAService.addQAWithType(question, answer, "ONLINE");
+            if ((Boolean) result.get("success")) {
+                return ResponseEntity.ok(result);
+            } else {
+                return ResponseEntity.badRequest().body(result);
+            }
+        } catch (Exception e) {
+            logger.error("添加在线邀请Q&A失败: {}", e.getMessage(), e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "添加失败: " + e.getMessage());
+            return ResponseEntity.status(500).body(errorResponse);
+        }
+    }
 }

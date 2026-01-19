@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>谷歌在线邀请管理 - 超级管理员</title>
+    <link rel="stylesheet" href="css/quill.snow.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header h1 { color: #4a5568; font-size: 2rem; }
+
+        .admin-badge {
+            background: linear-gradient(135deg, #4285f4 0%, #1a73e8 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .header-actions { display: flex; gap: 15px; flex-wrap: wrap; }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover { transform: translateY(-2px); }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4285f4 0%, #1a73e8 100%);
+            color: white;
+        }
+
+        .btn-secondary { background: #e2e8f0; color: #4a5568; }
+        .btn-success { background: linear-gradient(135deg, #34a853 0%, #2e7d32 100%); color: white; }
+        .btn-danger { background: linear-gradient(135deg, #ea4335 0%, #c62828 100%); color: white; }
+        .btn-warning { background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); color: white; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number { font-size: 2rem; font-weight: 700; color: #4285f4; }
+        .stat-label { color: #718096; font-size: 0.9rem; margin-top: 5px; }
+
+        .main-content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 0;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .tab-bar {
+            display: flex;
+            gap: 10px;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f7fafc;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            border: none;
+            background: transparent;
+            color: #4a5568;
+            font-weight: 700;
+            padding: 10px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background .2s, color .2s;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #1a73e8;
+            box-shadow: 0 2px 10px rgba(0,0,0,.06);
+        }
+
+        .tab-panel { padding: 25px; }
+        .tab-panel.hidden { display: none; }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 18px;
+        }
+
+        .filter {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .filter label { color: #4a5568; font-weight: 700; font-size: 0.9rem; }
+        .filter select {
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            color: #4a5568;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .filter select:focus {
+            border-color: #4285f4;
+            box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.15);
+        }
+
+        .toolbar-hint { color: #718096; font-size: 0.9rem; }
+
+        .invite-table { width: 100%; border-collapse: collapse; }
+        .invite-table th, .invite-table td { padding: 15px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        .invite-table th { background: #f7fafc; font-weight: 600; color: #4a5568; }
+        .invite-table tr:hover { background: #f7fafc; }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .status-pending { background: #fff3e0; color: #e65100; }
+        .status-submitted { background: #e3f2fd; color: #1565c0; }
+        .status-processed { background: #e8f5e9; color: #2e7d32; }
+        .status-rejected { background: #ffebee; color: #c62828; }
+
+        .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; border-radius: 6px; }
+
+        .loading { text-align: center; padding: 40px; color: #718096; }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #4285f4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: #718096; }
+        .empty-icon { font-size: 4rem; margin-bottom: 15px; }
+
+        .order-number {
+            font-family: monospace;
+            background: #e8f4fd;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #1565c0;
+        }
+
+        .verify-link {
+            color: #1a73e8;
+            text-decoration: none;
+            word-break: break-all;
+        }
+        .verify-link:hover { text-decoration: underline; }
+
+        .reason-cell { max-width: 360px; }
+        .time-cell { white-space: nowrap; }
+
+        @media (max-width: 768px) {
+            .header-content { flex-direction: column; align-items: flex-start; }
+            .invite-table { display: block; overflow-x: auto; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.9) translateY(-20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .modal-header { margin-bottom: 20px; }
+        .modal-header h3 { color: #333; font-size: 1.25rem; margin: 0; }
+        .modal-body { margin-bottom: 25px; }
+        .modal-body label { display: block; margin-bottom: 8px; font-weight: 600; color: #555; }
+        .modal-body textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            resize: vertical;
+            min-height: 100px;
+            transition: border-color 0.3s;
+        }
+        .modal-body textarea:focus { outline: none; border-color: #ff9800; }
+
+        .modal-footer { display: flex; gap: 12px; justify-content: flex-end; }
+        .modal-footer .btn { min-width: 100px; }
+
+        /* Q&A */
+        .qa-list { max-height: 520px; overflow-y: auto; }
+        .qa-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-left: 4px solid #4285f4;
+        }
+        .qa-item.disabled { opacity: 0.6; border-left-color: #999; }
+        .qa-question { font-weight: 600; color: #333; margin-bottom: 8px; font-size: 0.95rem; }
+        .qa-answer { color: #666; font-size: 0.875rem; line-height: 1.5; }
+        .qa-answer-editor .ql-container.ql-snow { border: none; background: transparent; font-size: 0.875rem; }
+        .qa-answer-editor .ql-editor { padding: 0; color: #666; }
+        .qa-answer-editor .ql-editor p,
+        .qa-answer-editor .ql-editor ol,
+        .qa-answer-editor .ql-editor ul { margin: 0 0 8px; }
+        .qa-answer-editor .ql-editor p:last-child,
+        .qa-answer-editor .ql-editor ol:last-child,
+        .qa-answer-editor .ql-editor ul:last-child { margin-bottom: 0; }
+        .qa-answer-editor .ql-editor a { color: #1a73e8; text-decoration: none; }
+        .qa-answer-editor .ql-editor a:hover { text-decoration: underline; }
+
+        .qa-editor {
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #fff;
+        }
+        .qa-editor:focus-within { border-color: #4285f4; box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.15); }
+        .qa-editor .ql-toolbar.ql-snow { border: none; border-bottom: 1px solid #e0e0e0; overflow-x: auto; }
+        .qa-editor .ql-container.ql-snow { border: none; min-height: 260px; max-height: 420px; overflow-y: auto; }
+        .qa-editor .ql-editor { min-height: 240px; padding: 12px 15px; font-size: 0.95rem; line-height: 1.6; }
+
+        #qaEditModal .modal-content { max-width: 860px; width: min(860px, calc(100% - 40px)); }
+        #qaEditModal .modal-body { max-height: 70vh; overflow-y: auto; }
+        @media (max-width: 640px) {
+            #qaEditModal .modal-content { width: calc(100% - 20px); }
+            .qa-editor .ql-container.ql-snow { min-height: 220px; max-height: 55vh; }
+        }
+
+        .qa-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+        .qa-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 0.8rem;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <h1>谷歌在线邀请管理</h1>
+                    <span class="admin-badge">👑 超级管理员</span>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="refreshData()">
+                        🔄 刷新
+                    </button>
+                    <a href="/invite-admin.html" class="btn btn-primary">
+                        ⬅️ 返回邀请管理
+                    </a>
+                    <a href="/temp-email-manager.html" class="btn btn-secondary">
+                        📧 返回邮箱管理
+                    </a>
+                    <button class="btn btn-secondary" onclick="logout()">
+                        🚪 退出登录
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalCount">-</div>
+                <div class="stat-label">总数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="submittedCount">-</div>
+                <div class="stat-label">待处理</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="processedCount">-</div>
+                <div class="stat-label">已处理</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="pendingCount">-</div>
+                <div class="stat-label">待提交</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="rejectedCount">-</div>
+                <div class="stat-label">已驳回</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="tab-bar" role="tablist" aria-label="在线邀请管理标签页">
+                <button id="tabBtnRecords" class="tab-btn active" type="button" role="tab" aria-selected="true">
+                    📋 申请列表
+                </button>
+                <button id="tabBtnQA" class="tab-btn" type="button" role="tab" aria-selected="false">
+                    ❓ Q&A 管理
+                </button>
+            </div>
+
+            <div id="tabRecords" class="tab-panel" role="tabpanel">
+                <div class="toolbar">
+                    <div class="filter">
+                        <label for="statusFilter">状态筛选</label>
+                        <select id="statusFilter">
+                            <option value="">全部</option>
+                            <option value="PENDING">待提交</option>
+                            <option value="SUBMITTED">待处理</option>
+                            <option value="PROCESSED">已处理</option>
+                            <option value="REJECTED">已驳回</option>
+                        </select>
+                    </div>
+                    <div class="toolbar-hint">提示：仅“待处理”支持确认处理；任意状态均可驳回/删除。</div>
+                </div>
+
+                <div id="inviteContainer">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <div>加载中...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tabQA" class="tab-panel hidden" role="tabpanel" aria-hidden="true">
+                <div class="toolbar">
+                    <div class="toolbar-hint">在线邀请专用 Q&A（类型：ONLINE）。</div>
+                    <div style="display:flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" type="button" onclick="showAddQAForm()">
+                            ➕ 添加 Q&A
+                        </button>
+                        <button class="btn btn-secondary" type="button" onclick="loadQAList()">
+                            🔄 刷新 Q&A
+                        </button>
+                    </div>
+                </div>
+                <div id="qaListContainer">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <div>加载中...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 驳回模态框 -->
+    <div id="cancelModal" class="modal" onclick="if(event.target === this) hideCancelModal()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>驳回申请</h3>
+            </div>
+            <div class="modal-body">
+                <label for="cancelReasonInput">驳回原因（可选）</label>
+                <textarea id="cancelReasonInput" placeholder="请输入驳回原因，将会显示给用户..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideCancelModal()">取消</button>
+                <button class="btn btn-warning" onclick="confirmCancel()">确认驳回</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Q&A 编辑模态框 -->
+    <div id="qaEditModal" class="modal" onclick="if(event.target === this) hideQAEditModal()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="qaEditTitle">添加 Q&A</h3>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="qaEditId">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="qaQuestionInput" style="display: block; margin-bottom: 8px; font-weight: 600;">问题</label>
+                    <input type="text" id="qaQuestionInput" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 0.95rem;" placeholder="请输入问题...">
+                </div>
+                <div class="form-group">
+                    <label for="qaAnswerInput" style="display: block; margin-bottom: 8px; font-weight: 600;">答案（富文本）</label>
+                    <div id="qaAnswerEditor" class="qa-editor" aria-label="答案富文本编辑器"></div>
+                    <textarea id="qaAnswerInput" style="display:none" aria-hidden="true"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="hideQAEditModal()">取消</button>
+                <button class="btn btn-primary" onclick="saveQA()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/quill@1.3.7/dist/quill.min.js"></script>
+    <script src="online-invite-admin.js"></script>
+</body>
+</html>
+

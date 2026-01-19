@@ -57,6 +57,15 @@ public class InviteQA {
     private Boolean enabled = true;
 
     /**
+     * Q&A类型（用于区分不同业务模块）
+     * INVITE - 传统邀请页面Q&A
+     * ONLINE - 在线邀请页面Q&A
+     */
+    @Column(name = "qa_type", length = 20)
+    @lombok.Builder.Default
+    private String qaType = "INVITE";
+
+    /**
      * 创建时间
      */
     @Column(name = "create_time", nullable = false)

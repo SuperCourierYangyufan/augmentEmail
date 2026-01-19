@@ -39,12 +39,34 @@ public class InviteQAService {
     }
 
     /**
+     * 根据类型获取所有启用的Q&A（前台展示用）
+     *
+     * @param qaType Q&A类型（INVITE/ONLINE）
+     * @return Q&A列表
+     */
+    public List<Map<String, Object>> getEnabledQAListByType(String qaType) {
+        List<InviteQA> qaList = inviteQARepository.findAllEnabledByTypeOrderBySortOrder(qaType);
+        return qaList.stream().map(this::convertToMap).collect(Collectors.toList());
+    }
+
+    /**
      * 获取所有Q&A（管理端使用）
      *
      * @return Q&A列表
      */
     public List<Map<String, Object>> getAllQAList() {
         List<InviteQA> qaList = inviteQARepository.findAllOrderBySortOrder();
+        return qaList.stream().map(this::convertToMapWithDetails).collect(Collectors.toList());
+    }
+
+    /**
+     * 根据类型获取所有Q&A（管理端使用）
+     *
+     * @param qaType Q&A类型（INVITE/ONLINE）
+     * @return Q&A列表
+     */
+    public List<Map<String, Object>> getAllQAListByType(String qaType) {
+        List<InviteQA> qaList = inviteQARepository.findAllByTypeOrderBySortOrder(qaType);
         return qaList.stream().map(this::convertToMapWithDetails).collect(Collectors.toList());
     }
 
@@ -57,6 +79,19 @@ public class InviteQAService {
      */
     @Transactional
     public Map<String, Object> addQA(String question, String answer) {
+        return addQAWithType(question, answer, "INVITE");
+    }
+
+    /**
+     * 添加指定类型的Q&A
+     *
+     * @param question 问题
+     * @param answer 答案
+     * @param qaType Q&A类型
+     * @return 操作结果
+     */
+    @Transactional
+    public Map<String, Object> addQAWithType(String question, String answer, String qaType) {
         Map<String, Object> result = new HashMap<>();
 
         if (question == null || question.trim().isEmpty()) {
@@ -71,18 +106,19 @@ public class InviteQAService {
             return result;
         }
 
-        // 获取当前最大排序值
-        Integer maxSortOrder = inviteQARepository.getMaxSortOrder();
+        // 获取当前类型的最大排序值
+        Integer maxSortOrder = inviteQARepository.getMaxSortOrderByType(qaType);
 
         InviteQA qa = InviteQA.builder()
                 .question(question.trim())
                 .answer(answer.trim())
                 .sortOrder(maxSortOrder + 1)
                 .enabled(true)
+                .qaType(qaType)
                 .build();
 
         inviteQARepository.save(qa);
-        logger.info("添加Q&A成功，ID: {}", qa.getId());
+        logger.info("添加Q&A成功，ID: {}, 类型: {}", qa.getId(), qaType);
 
         result.put("success", true);
         result.put("message", "添加成功");

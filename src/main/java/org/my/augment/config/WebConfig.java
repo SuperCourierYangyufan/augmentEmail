@@ -73,6 +73,13 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/invite/qa/public",
                         "/api/invite/submitOrder/**",
 
+                        // 在线邀请公开接口和页面（无需登录）
+                        "/online-invite-apply",
+                        "/online-invite-apply.html",
+                        "/api/online-invite/apply",
+                        "/api/online-invite/query",
+                        "/api/invite/qa/online/public",
+
                         // 静态资源
                         "/css/**",
                         "/js/**",
