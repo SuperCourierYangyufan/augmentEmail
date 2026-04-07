@@ -93,7 +93,10 @@ public class WebConfig implements WebMvcConfigurer {
 
                         // 错误页面
                         "/error",
-                        "/error/**"
+                        "/error/**",
+
+                        // wps
+                        "/v3/**"
                 );
 
         // 配置超级管理员权限拦截器（优先级更高）
